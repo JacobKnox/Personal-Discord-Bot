@@ -3,7 +3,7 @@ from os.path import join, dirname
 import discord
 from dotenv import load_dotenv
 from discord.ext import commands
-from pnw_utils import *
+import pnw_utils as pnw
 
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
@@ -35,20 +35,20 @@ async def on_ready():
 
 
 # Add a command to calculate the cost of infrastructure
-@bot.command(name='infra')
+@bot.command(name='pnwinfra')
 async def calc_infra(ctx, *args):
     # If there are less than two arguments or more than three arguments, then it isn't a valid command call
     if len(args) < 2 or len(args) > 3:
         embed=discord.Embed(title="Invalid Arguments", description="This function requires two or three arguments:\n!infra [nation id] [start] [end]\n!infra [start] [end]", color=0xFF5733)
     # If there are two arguments, then just calculate the difference between the two
     elif len(args) == 2:
-        infra_cost = calculate_infrastructure_value(float(args[0]), float(args[1]))
+        infra_cost = pnw.calculate_infrastructure_value(float(args[0]), float(args[1]))
         embed=discord.Embed(title="Calculate Infrastructure Cost", description=f'The cost to go from {args[0]} to {args[1]} is:\n${infra_cost: ,.2f}', color=0xFF5733)
     # If there are three arguments, then calculate the difference between the two considering their nation
     elif len(args) == 3:
         # Get the infra query result
-        result = get_query("infra", args[0])
-        infra_cost = calc_infra_cost(result, float(args[1]), float(args[2]))
+        result = pnw.get_query("infra", args[0])
+        infra_cost = pnw.calc_infra_cost(result, float(args[1]), float(args[2]))
         embed=discord.Embed(title="Calculate Infrastructure Cost", description=f'The cost to go from {args[1]: ,.2f} to {args[2]: ,.2f} for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={args[0]}) is:\n${infra_cost: ,.2f}', color=0xFF5733)
     # Log the command usage
     LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !infra command with args: {args}.\n')
@@ -56,16 +56,16 @@ async def calc_infra(ctx, *args):
     await ctx.send(embed=embed)
 
 # Add a command to calculate the cost to go from a city to another city
-@bot.command(name='city')
+@bot.command(name='pnwcity')
 async def calc_city(ctx, start, end, nation_id = None):
     if nation_id is not None:
         # Get the city query result
-        result = get_query("city", nation_id)
-        city_cost = calc_city_cost(int(start), int(end), result)
+        result = pnw.get_query("city", nation_id)
+        city_cost = pnw.calc_city_cost(int(start), int(end), result)
         embed=discord.Embed(title="Calculate City Cost", description=f'The cost to go from {start} to {end} for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}) is:\n${city_cost: ,.2f}', color=0xFF5733)
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !city command with id {nation_id}, start {start}, and end {end}.\n')
     else:
-        city_cost = calc_city_cost(int(start), int(end))
+        city_cost = pnw.calc_city_cost(int(start), int(end))
         embed=discord.Embed(title="Calculate City Cost", description=f'The cost to go from {start} to {end} is:\n${city_cost: ,.2f}', color=0xFF5733)
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !city command with start {start} and end {end}.\n')
     # Log the command usage
@@ -79,11 +79,11 @@ async def calc_city(ctx, start, end, nation_id = None):
 
 
 # Add a command to calculate food revenue (usage, production, and net revenue) of a nation
-@bot.command(name="food")
+@bot.command(name="pnwfood")
 async def calc_food(ctx, nation_id):
     # Get the food query result
-    result = get_query("food", nation_id)
-    net_food, food_production, food_usage = calc_food_rev(result)
+    result = pnw.get_query("food", nation_id)
+    net_food, food_production, food_usage = pnw.calc_food_rev(result)
     embed=discord.Embed(title="Food Statistics", description=f'Statistics about food revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(food_production): ,.2f}\nUsage: {food_usage: ,.2f}\nNet: {net_food: ,.2f}', color=0xFF5733)
     # Log the command usage
     LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !food command with id {nation_id}.\n')
