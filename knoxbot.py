@@ -27,7 +27,12 @@ async def on_ready():
     )
     members = '\n - '.join([member.name for member in guild.members])
     print(f'Guild Members:\n - {members}')
-        
+
+
+########################
+# CALCULATION COMMANDS #
+########################
+
 # Add a command to calculate the cost of infrastructure
 @bot.command(name='infra')
 async def calc_infra(ctx, *args):
@@ -61,6 +66,12 @@ async def calc_city(ctx, nation_id, end):
     LOG.flush()
     await ctx.send(embed=embed)
 
+
+####################
+# REVENUE COMMANDS #
+####################
+
+
 # Add a command to calculate food revenue (usage, production, and net revenue) of a nation
 @bot.command(name="food")
 async def calc_food(ctx, nation_id):
@@ -72,6 +83,12 @@ async def calc_food(ctx, nation_id):
     LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !food command with id {nation_id}.\n')
     LOG.flush()
     await ctx.send(embed=embed)
+
+
+##################
+# ADMIN COMMANDS #
+##################
+
 
 # Add a command to clear the commands log
 @bot.command(name="clearlog")
