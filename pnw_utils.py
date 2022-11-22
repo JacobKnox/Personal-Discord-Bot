@@ -118,17 +118,20 @@ def calc_city_cost(start_city, goal_city, nation_call = None):
     for city_num in range(start_city, goal_city):
         # calculate the cost of the next city
         city_cost = (50000 * pow((city_num - 1), 3) + 150000 * city_num + 75000)
+        # if the user has specified a nation
         if nation_call is not None:
             # if the nation has Urban Planning project, apply it
-            if (nation_call.nations[0].urban_planning == True):
+            if (nation_call.nations[0].urban_planning):
                 city_cost -= 50000000
             # if the nation has Advanced Urban Planning project, apply it
-            if (nation_call.nations[0].advanced_urban_planning == True):
+            if (nation_call.nations[0].advanced_urban_planning):
                 city_cost -= 100000000
+            if (nation_call.nations[0].metropolitan_planning):
+                city_cost -= 150000000
             # if the nation's domestic policy is currently Manifest Destiny, apply it
             if (nation_call.nations[0].domestic_policy == pnwkit.data.DomesticPolicy(1)):
                 # if the nation has Government Support Agency project, then couple its effects with Manifest Destiny
-                if (nation_call.nations[0].government_support_agency == True):
+                if (nation_call.nations[0].government_support_agency):
                     city_cost *= 0.925
                 # otherwise, just apply Manifest Destiny
                 else:
@@ -136,7 +139,7 @@ def calc_city_cost(start_city, goal_city, nation_call = None):
         # add the cost of the next city to the total cost
         total_cost += city_cost
     # finally, return the total city cost
-    return total_cost
+    return total_cost if total_cost > 0 else 0
 
 
 # function to calculate the cost of buying infra from a current amount to a goal amount
