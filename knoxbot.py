@@ -29,6 +29,19 @@ async def on_ready():
     print(f'Guild Members:\n - {members}')
 
 
+
+
+
+#############################
+#                           #
+# POLITICS AND WAR COMMANDS #
+#                           #
+#############################
+
+
+
+
+
 ########################
 # CALCULATION COMMANDS #
 ########################
@@ -91,9 +104,17 @@ async def calc_food(ctx, nation_id):
     await ctx.send(embed=embed)
 
 
+
+
+
 ##################
+#                #
 # ADMIN COMMANDS #
+#                #
 ##################
+
+
+
 
 
 # Add a command to clear the commands log
