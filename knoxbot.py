@@ -48,18 +48,7 @@ async def calc_infra(ctx, *args):
     # If there are three arguments, then calculate the difference between the two considering their nation
     elif len(args) == 3:
         # Assemble the query with their nation ID
-        query = kit.query(
-            "nations", {
-                "id": int(args[0]),
-                "first": 1
-            },
-            """
-            domestic_policy
-            nation_name
-            government_support_agency
-            center_for_civil_engineering
-            advanced_engineering_corps
-            """)
+        query = get_query("infra", args[0])
         # Process the above nation query
         result = query.get()
         infra_cost = calc_infra_cost(result, float(args[1]), float(args[2]))
@@ -71,24 +60,7 @@ async def calc_infra(ctx, *args):
     
 @bot.command(name='city')
 async def calc_city(ctx, nation_id, end):
-    query = kit.query(
-        "nations", {
-            "id": int(nation_id),
-            "first": 1
-        },
-        """
-        cities{
-            farm
-            land
-        }
-        defensive_wars
-        offensive_wars
-        soldiers
-        population
-        continent
-        resource_production_center
-        massirr
-        """)
+    query = get_query("city", nation_id)
     # process the above nation query
     result = query.get()
     city_cost = calc_city_cost(result, int(end))
@@ -96,27 +68,7 @@ async def calc_city(ctx, nation_id, end):
 
 @bot.command(name="food")
 async def calc_food(ctx, nation_id):
-    query = kit.query(
-        "nations", {
-            "id": int(nation_id),
-            "first": 1,
-        },
-        """
-        cities{
-            farm
-            land
-        }
-        defensive_wars{
-        }
-        offensive_wars{
-        }
-        soldiers
-        nation_name
-        population
-        continent
-        resource_production_center
-        massirr
-        """)
+    query = get_query("food", nation_id)
     result = query.get()
     net_food, food_production, food_usage = calc_food_rev(result)
     embed=discord.Embed(title="Food Statistics", description=f'Statistics about food revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(food_production): ,.2f}\nUsage: {food_usage: ,.2f}\nNet: {net_food: ,.2f}', color=0xFF5733)

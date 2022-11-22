@@ -22,43 +22,6 @@ RESOURCES  = {
 # create a QueryKit with my API key to create queries
 kit = pnwkit.QueryKit(API_KEY)
 
-# "Test" API call to get a bunch of information
-general_query = kit.query(
-    "nations", {
-        "id": 244934,
-        "first": 1
-    }, """
-	population
-	soldiers
-	continent
-	defensive_wars{
-		turns_left
-	}
-	offensive_wars{
-		turns_left
-	}
-	cities{
-		farm
-		land
-		coal_mine
-		steel_mill
-		powered
-		infrastructure
-		coal_power
-	}
-	massirr
-	advanced_urban_planning
-	urban_planning
-	domestic_policy
-	government_support_agency
-	center_for_civil_engineering
-	advanced_engineering_corps
-	iron_works
-    resource_production_center
-	""")
-# process the above nation query
-general_result = general_query.get()
-
 ### FUNCTIONS ###
 
 
@@ -67,20 +30,7 @@ general_result = general_query.get()
 def calc_food_rev(api_result):
     nation = api_result.nations[0]
     # querying radiation information from GameInfo
-    radiation_query = kit.query(
-        "game_info", {}, """
-		game_date
-		radiation {
-			africa
-			antarctica
-			asia
-			australia
-			europe
-			global
-			north_america
-			south_america
-		}
-		""")
+    radiation_query = get_query("radiation")
     # attempting to process above query
     radiation_result = radiation_query.get()
     RADIATION = {
@@ -271,3 +221,113 @@ def calculate_infrastructure_value(start: float, end: float, /) -> float:
 
 
 ### End of code from Rift ###
+
+def get_query(query_type = "general", nation_id = None):
+    if query_type == "food":
+        return kit.query(
+            "nations", {
+                "id": int(nation_id),
+                "first": 1,
+            },
+            """
+            cities{
+                farm
+                land
+            }
+            defensive_wars{
+            }
+            offensive_wars{
+            }
+            soldiers
+            nation_name
+            population
+            continent
+            resource_production_center
+            massirr
+            """)
+    elif query_type == "city":
+        return kit.query(
+            "nations", {
+                "id": int(nation_id),
+                "first": 1
+            },
+            """
+            cities{
+                farm
+                land
+            }
+            defensive_wars
+            offensive_wars
+            soldiers
+            population
+            continent
+            resource_production_center
+            massirr
+            """)
+    elif query_type == "infra":
+        return kit.query(
+                "nations", {
+                    "id": int(nation_id),
+                    "first": 1
+                },
+                """
+                domestic_policy
+                nation_name
+                government_support_agency
+                center_for_civil_engineering
+                advanced_engineering_corps
+                """)
+    elif query_type == "radiation":
+        return kit.query(
+            "game_info", {}, """
+            game_date
+            radiation {
+                africa
+                antarctica
+                asia
+                australia
+                europe
+                global
+                north_america
+                south_america
+            }
+            """)
+    elif query_type == "general":
+        return kit.query(
+                "nations", {
+                    "id": nation_id,
+                    "first": 1
+                }, """
+                population
+                soldiers
+                continent
+                defensive_wars{
+                    turns_left
+                }
+                offensive_wars{
+                    turns_left
+                }
+                cities{
+                    farm
+                    land
+                    coal_mine
+                    steel_mill
+                    powered
+                    infrastructure
+                    coal_power
+                }
+                massirr
+                advanced_urban_planning
+                urban_planning
+                domestic_policy
+                government_support_agency
+                center_for_civil_engineering
+                advanced_engineering_corps
+                iron_works
+                resource_production_center
+                """)
+        
+# "Test" API call to get a bunch of information
+general_query = get_query(nation_id = 244934)
+# process the above nation query
+general_result = general_query.get()
