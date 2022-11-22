@@ -44,6 +44,8 @@ async def calc_infra(ctx, *args):
         result = get_query("infra", args[0])
         infra_cost = calc_infra_cost(result, float(args[1]), float(args[2]))
         embed=discord.Embed(title="Calculate Infrastructure Cost", description=f'The cost to go from {args[1]: ,.2f} to {args[2]: ,.2f} for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={args[0]}) is:\n${infra_cost: ,.2f}', color=0xFF5733)
+    LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !infra command with args: {args}.\n')
+    LOG.flush()
     await ctx.send(embed=embed)
 
 @bot.command(name='city')
@@ -51,6 +53,8 @@ async def calc_city(ctx, nation_id, end):
     result = get_query("city", nation_id)
     city_cost = calc_city_cost(result, int(end))
     embed=discord.Embed(title="Calculate City Cost", description=f'The cost to go from {len(result.nations[0].cities)} to {end} for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}) is:\n${city_cost: ,.2f}', color=0xFF5733)
+    LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !city command with id {nation_id} and end {end}.\n')
+    LOG.flush()
     await ctx.send(embed=embed)
 
 @bot.command(name="food")
