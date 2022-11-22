@@ -33,6 +33,7 @@ async def on_ready():
 # CALCULATION COMMANDS #
 ########################
 
+
 # Add a command to calculate the cost of infrastructure
 @bot.command(name='infra')
 async def calc_infra(ctx, *args):
@@ -56,13 +57,18 @@ async def calc_infra(ctx, *args):
 
 # Add a command to calculate the cost to go from a city to another city
 @bot.command(name='city')
-async def calc_city(ctx, nation_id, end):
-    # Get the city query result
-    result = get_query("city", nation_id)
-    city_cost = calc_city_cost(result, int(end))
-    embed=discord.Embed(title="Calculate City Cost", description=f'The cost to go from {len(result.nations[0].cities)} to {end} for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}) is:\n${city_cost: ,.2f}', color=0xFF5733)
+async def calc_city(ctx, start, end, nation_id = None):
+    if nation_id is not None:
+        # Get the city query result
+        result = get_query("city", nation_id)
+        city_cost = calc_city_cost(int(start), int(end), result)
+        embed=discord.Embed(title="Calculate City Cost", description=f'The cost to go from {start} to {end} for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}) is:\n${city_cost: ,.2f}', color=0xFF5733)
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !city command with id {nation_id}, start {start}, and end {end}.\n')
+    else:
+        city_cost = calc_city_cost(int(start), int(end))
+        embed=discord.Embed(title="Calculate City Cost", description=f'The cost to go from {start} to {end} is:\n${city_cost: ,.2f}', color=0xFF5733)
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !city command with start {start} and end {end}.\n')
     # Log the command usage
-    LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !city command with id {nation_id} and end {end}.\n')
     LOG.flush()
     await ctx.send(embed=embed)
 

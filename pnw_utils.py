@@ -110,29 +110,29 @@ def calc_food_rev(api_result):
 
 # function for calculating the cost of bringing a nation from their current city count to a goal
 # completely accurate
-def calc_city_cost(nation_call, goal_city):
+def calc_city_cost(start_city, goal_city, nation_call = None):
     # intialize a temporary total cost to 0
     total_cost = 0
     # intialize a temporary cost to 0
     city_cost = 0
-    for city_num in range(len(nation_call.nations[0].cities), goal_city):
+    for city_num in range(start_city, goal_city):
         # calculate the cost of the next city
-        city_cost = (50000 * pow(
-            (city_num - 1), 3) + 150000 * city_num + 75000)
-        # if the nation has Urban Planning project, apply it
-        if (nation_call.nations[0].urban_planning == True):
-            city_cost -= 50000000
-        # if the nation has Advanced Urban Planning project, apply it
-        if (nation_call.nations[0].advanced_urban_planning == True):
-            city_cost -= 100000000
-        # if the nation's domestic policy is currently Manifest Destiny, apply it
-        if (nation_call.nations[0].domestic_policy == pnwkit.data.DomesticPolicy(1)):
-            # if the nation has Government Support Agency project, then couple its effects with Manifest Destiny
-            if (nation_call.nations[0].government_support_agency == True):
-                city_cost *= 0.925
-            # otherwise, just apply Manifest Destiny
-            else:
-                city_cost *= 0.95
+        city_cost = (50000 * pow((city_num - 1), 3) + 150000 * city_num + 75000)
+        if nation_call is not None:
+            # if the nation has Urban Planning project, apply it
+            if (nation_call.nations[0].urban_planning == True):
+                city_cost -= 50000000
+            # if the nation has Advanced Urban Planning project, apply it
+            if (nation_call.nations[0].advanced_urban_planning == True):
+                city_cost -= 100000000
+            # if the nation's domestic policy is currently Manifest Destiny, apply it
+            if (nation_call.nations[0].domestic_policy == pnwkit.data.DomesticPolicy(1)):
+                # if the nation has Government Support Agency project, then couple its effects with Manifest Destiny
+                if (nation_call.nations[0].government_support_agency == True):
+                    city_cost *= 0.925
+                # otherwise, just apply Manifest Destiny
+                else:
+                    city_cost *= 0.95
         # add the cost of the next city to the total cost
         total_cost += city_cost
     # finally, return the total city cost
@@ -253,16 +253,13 @@ def get_query(query_type = "general", nation_id = None):
             },
             """
             cities{
-                farm
-                land
             }
-            defensive_wars
-            offensive_wars
-            soldiers
-            population
-            continent
-            resource_production_center
-            massirr
+            advanced_urban_planning
+            metropolitan_planning
+            nation_name
+            urban_planning
+            domestic_policy
+            government_support_agency
             """)
     elif query_type == "infra":
         query = kit.query(
@@ -330,5 +327,3 @@ def get_query(query_type = "general", nation_id = None):
         
 # "Test" API call to get a bunch of information
 general_query = get_query(nation_id = 244934)
-# process the above nation query
-general_result = general_query.get()
