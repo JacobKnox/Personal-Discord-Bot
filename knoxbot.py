@@ -33,24 +33,25 @@ async def on_ready():
 async def calc_infra(ctx, *args):
     # If there are less than two arguments, then it isn't a valid command call
     if len(args) < 2 or len(args) > 3:
-        embed=discord.Embed(title="Invalid Arguments", description="This function requires two or three arguments:\n!infra [nation id] [start] [end]\n!infra [start] [end]")
+        embed=discord.Embed(title="Invalid Arguments", description="This function requires two or three arguments:\n!infra [nation id] [start] [end]\n!infra [start] [end]", color=0xFF5733)
     # If there are two arguments, then just calculate the difference between the two
     elif len(args) == 2:
         infra_cost = calculate_infrastructure_value(float(args[0]), float(args[1]))
-        embed=discord.Embed(title="Calculate Infrastructure", description=f'The cost to go from {args[0]} to {args[1]} is:\n${infra_cost: ,.2f}', color=0xFF5733)
+        embed=discord.Embed(title="Calculate Infrastructure Cost", description=f'The cost to go from {args[0]} to {args[1]} is:\n${infra_cost: ,.2f}', color=0xFF5733)
     # If there are three arguments, then calculate the difference between the two considering their nation
     elif len(args) == 3:
         # Assemble the query with their nation ID
         result = get_query("infra", args[0])
         infra_cost = calc_infra_cost(result, float(args[1]), float(args[2]))
-        embed=discord.Embed(title="Calculate Infrastructure", description=f'The cost to go from {args[1]: ,.2f} to {args[2]: ,.2f} for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={args[0]}) is:\n${infra_cost: ,.2f}', color=0xFF5733)
+        embed=discord.Embed(title="Calculate Infrastructure Cost", description=f'The cost to go from {args[1]: ,.2f} to {args[2]: ,.2f} for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={args[0]}) is:\n${infra_cost: ,.2f}', color=0xFF5733)
     await ctx.send(embed=embed)
-    
+
 @bot.command(name='city')
 async def calc_city(ctx, nation_id, end):
     result = get_query("city", nation_id)
     city_cost = calc_city_cost(result, int(end))
-    await ctx.send(f'${city_cost: ,.2f}')
+    embed=discord.Embed(title="Calculate City Cost", description=f'The cost to go from {len(result.nations[0].cities)} to {end} for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}) is:\n${city_cost: ,.2f}', color=0xFF5733)
+    await ctx.send(embed=embed)
 
 @bot.command(name="food")
 async def calc_food(ctx, nation_id):
