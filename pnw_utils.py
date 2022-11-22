@@ -224,7 +224,7 @@ def calculate_infrastructure_value(start: float, end: float, /) -> float:
 
 def get_query(query_type = "general", nation_id = None):
     if query_type == "food":
-        return kit.query(
+        query = kit.query(
             "nations", {
                 "id": int(nation_id),
                 "first": 1,
@@ -246,7 +246,7 @@ def get_query(query_type = "general", nation_id = None):
             massirr
             """)
     elif query_type == "city":
-        return kit.query(
+        query = kit.query(
             "nations", {
                 "id": int(nation_id),
                 "first": 1
@@ -265,7 +265,7 @@ def get_query(query_type = "general", nation_id = None):
             massirr
             """)
     elif query_type == "infra":
-        return kit.query(
+        query = kit.query(
                 "nations", {
                     "id": int(nation_id),
                     "first": 1
@@ -278,7 +278,7 @@ def get_query(query_type = "general", nation_id = None):
                 advanced_engineering_corps
                 """)
     elif query_type == "radiation":
-        return kit.query(
+        query = kit.query(
             "game_info", {}, """
             game_date
             radiation {
@@ -293,7 +293,7 @@ def get_query(query_type = "general", nation_id = None):
             }
             """)
     elif query_type == "general":
-        return kit.query(
+        query = kit.query(
                 "nations", {
                     "id": nation_id,
                     "first": 1
@@ -326,6 +326,7 @@ def get_query(query_type = "general", nation_id = None):
                 iron_works
                 resource_production_center
                 """)
+    return query.get()
         
 # "Test" API call to get a bunch of information
 general_query = get_query(nation_id = 244934)
