@@ -23,7 +23,7 @@ async def on_ready():
             break
     print(
         f'{bot.user} is connected to the following guild:\n'
-        f'{guild.name}(id: {guild.id})'
+        f'{guild.name} (id: {guild.id})'
     )
     members = '\n - '.join([member.name for member in guild.members])
     print(f'Guild Members:\n - {members}')
@@ -31,7 +31,7 @@ async def on_ready():
 # Add a command to calculate the cost of infrastructure
 @bot.command(name='infra')
 async def calc_infra(ctx, *args):
-    # If there are less than two arguments, then it isn't a valid command call
+    # If there are less than two arguments or more than three arguments, then it isn't a valid command call
     if len(args) < 2 or len(args) > 3:
         embed=discord.Embed(title="Invalid Arguments", description="This function requires two or three arguments:\n!infra [nation id] [start] [end]\n!infra [start] [end]", color=0xFF5733)
     # If there are two arguments, then just calculate the difference between the two
@@ -40,38 +40,48 @@ async def calc_infra(ctx, *args):
         embed=discord.Embed(title="Calculate Infrastructure Cost", description=f'The cost to go from {args[0]} to {args[1]} is:\n${infra_cost: ,.2f}', color=0xFF5733)
     # If there are three arguments, then calculate the difference between the two considering their nation
     elif len(args) == 3:
-        # Assemble the query with their nation ID
+        # Get the infra query result
         result = get_query("infra", args[0])
         infra_cost = calc_infra_cost(result, float(args[1]), float(args[2]))
         embed=discord.Embed(title="Calculate Infrastructure Cost", description=f'The cost to go from {args[1]: ,.2f} to {args[2]: ,.2f} for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={args[0]}) is:\n${infra_cost: ,.2f}', color=0xFF5733)
+    # Log the command usage
     LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !infra command with args: {args}.\n')
     LOG.flush()
     await ctx.send(embed=embed)
 
+# Add a command to calculate the cost to go from a city to another city
 @bot.command(name='city')
 async def calc_city(ctx, nation_id, end):
+    # Get the city query result
     result = get_query("city", nation_id)
     city_cost = calc_city_cost(result, int(end))
     embed=discord.Embed(title="Calculate City Cost", description=f'The cost to go from {len(result.nations[0].cities)} to {end} for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}) is:\n${city_cost: ,.2f}', color=0xFF5733)
+    # Log the command usage
     LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !city command with id {nation_id} and end {end}.\n')
     LOG.flush()
     await ctx.send(embed=embed)
 
+# Add a command to calculate food revenue (usage, production, and net revenue) of a nation
 @bot.command(name="food")
 async def calc_food(ctx, nation_id):
+    # Get the food query result
     result = get_query("food", nation_id)
     net_food, food_production, food_usage = calc_food_rev(result)
     embed=discord.Embed(title="Food Statistics", description=f'Statistics about food revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(food_production): ,.2f}\nUsage: {food_usage: ,.2f}\nNet: {net_food: ,.2f}', color=0xFF5733)
+    # Log the command usage
     LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !food command with id {nation_id}.\n')
     LOG.flush()
     await ctx.send(embed=embed)
 
+# Add a command to clear the commands log
 @bot.command(name="clearlog")
 async def clear_log(ctx):
+    # If the command user is an admin, then clear the log
     if ctx.message.author.id in ADMINS:
         with open("commands_log.log",'w') as _:
             pass
         embed=discord.Embed(title="Log Clear", description=f'Admin {ctx.message.author} ({ctx.message.author.id}) has cleared the logs.', color=0xFF5733)
+    # Otherwise, send an improper access message
     else:
         embed=discord.Embed(title="Improper Access", description=f'User {ctx.message.author} ({ctx.message.author.id}) does not have permissions to run this command. Contact an Admin to resolve this issue.', color=0xFF5733)
     await ctx.send(embed=embed)
