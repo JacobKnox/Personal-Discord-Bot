@@ -12,6 +12,8 @@ load_dotenv(dotenv_path)
 TOKEN = ENV("DISCORD_TOKEN")
 GUILD = ENV('DISCORD_GUILD')
 API_KEY = ENV("API_KEY")
+LOG = open("commands_log.log", "a")
+ADMINS = [int(id) for id in ENV("ADMIN_IDS").split(",")]
 
 # create a QueryKit with my API key to create queries
 kit = pnwkit.QueryKit(API_KEY)
@@ -118,6 +120,18 @@ async def calc_food(ctx, nation_id):
     result = query.get()
     net_food, food_production, food_usage = calc_food_rev(result)
     embed=discord.Embed(title="Food Statistics", description=f'Statistics about food revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(food_production): ,.2f}\nUsage: {food_usage: ,.2f}\nNet: {net_food: ,.2f}', color=0xFF5733)
+    LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !food command with id {nation_id}.\n')
+    LOG.flush()
+    await ctx.send(embed=embed)
+
+@bot.command(name="clearlog")
+async def clear_log(ctx):
+    if ctx.message.author.id in ADMINS:
+        with open("commands_log.log",'w') as _:
+            pass
+        embed=discord.Embed(title="Log Clear", description=f'Admin {ctx.message.author} ({ctx.message.author.id}) has cleared the logs.', color=0xFF5733)
+    else:
+        embed=discord.Embed(title="Improper Access", description=f'User {ctx.message.author} ({ctx.message.author.id}) does not have permissions to run this command. Contact an Admin to resolve this issue.', color=0xFF5733)
     await ctx.send(embed=embed)
 
 bot.run(TOKEN)
