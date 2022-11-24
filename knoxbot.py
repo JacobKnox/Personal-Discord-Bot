@@ -138,6 +138,8 @@ async def clear_log(ctx):
     # Otherwise, send an improper access message
     else:
         embed=discord.Embed(title="Improper Access", description=f'User {ctx.message.author} ({ctx.message.author.id}) does not have permissions to run this command. Contact an Admin to resolve this issue.', color=0xFF5733)
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to clear the logs, but did not have proper access.\n')
+        LOG.flush()
     await ctx.send(embed=embed)
 
 # Add a command to shut the bot off
@@ -146,11 +148,15 @@ async def shutoff(ctx):
     # If the command user is an admin, then shut the bot off
     if ctx.message.author.id in ADMINS:
         embed=discord.Embed(title="Bot Shutoff", description=f'Admin {ctx.message.author} ({ctx.message.author.id}) has shutoff the bot.', color=0xFF5733)
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) shut the bot off.\n')
+        LOG.flush()
         await ctx.send(embed=embed)
         exit()
     # Otherwise, send an improper access message
     else:
         embed=discord.Embed(title="Improper Access", description=f'User {ctx.message.author} ({ctx.message.author.id}) does not have permissions to run this command. Contact an Admin to resolve this issue.', color=0xFF5733)
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to shut off the bot, but did not have proper access.\n')
+        LOG.flush()
         await ctx.send(embed=embed)
 
 bot.run(TOKEN)
