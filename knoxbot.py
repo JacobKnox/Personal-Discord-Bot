@@ -12,6 +12,7 @@ TOKEN = ENV("DISCORD_TOKEN")
 GUILD = ENV('DISCORD_GUILD')
 LOG = open("commands_log.log", "a")
 ADMINS = [int(id) for id in ENV("ADMIN_IDS").split(",")]
+ALLOWED_GUILDS = [int(id) for id in ENV("ALLOWED_GUILDS").split(",")]
 
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 
@@ -26,6 +27,12 @@ async def on_ready():
     )
     members = '\n - '.join([member.name for member in guild.members])
     print(f'Guild Members:\n - {members}')
+
+def check_guild(guild):
+    if guild.id in ALLOWED_GUILDS:
+        return True
+    else:
+        return False
 
 
 
@@ -49,6 +56,11 @@ async def on_ready():
 # Add a command to calculate the cost of infrastructure
 @bot.command(name='pnwinfra')
 async def calc_infra(ctx, *args):
+    if not check_guild(ctx.guild):
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use the !pnwinfra command in guild {ctx.guild.id}.\n')
+        LOG.flush()
+        await ctx.send("You do not have permission to use commands in this server. Please contact an admin for support.")
+        return
     # If there are less than two arguments or more than three arguments, then it isn't a valid command call
     if len(args) < 2 or len(args) > 3:
         embed=discord.Embed(title="Invalid Arguments", description="This function requires two or three arguments:\n!pnwinfra [nation id] [start] [end]\n!pnwinfra [start] [end]", color=0xFF5733)
@@ -70,6 +82,11 @@ async def calc_infra(ctx, *args):
 # Add a command to calculate the cost to go from a city to another city
 @bot.command(name='pnwcity')
 async def calc_city(ctx, start, end, nation_id = None):
+    if not check_guild(ctx.guild):
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use the !pnwcity command in guild {ctx.guild.id}.\n')
+        LOG.flush()
+        await ctx.send("You do not have permission to use commands in this server. Please contact an admin for support.")
+        return
     if nation_id is not None:
         # Get the city query result
         result = pnw.get_query("city", nation_id)
@@ -93,6 +110,11 @@ async def calc_city(ctx, start, end, nation_id = None):
 # Add a command to calculate food revenue (usage, production, and net revenue) of a nation
 @bot.command(name="pnwfood")
 async def calc_food(ctx, nation_id):
+    if not check_guild(ctx.guild):
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use the !pnwfood command in guild {ctx.guild.id}.\n')
+        LOG.flush()
+        await ctx.send("You do not have permission to use commands in this server. Please contact an admin for support.")
+        return
     # Get the food query result
     result = pnw.get_query("food", nation_id)
     net_food, food_production, food_usage = pnw.calc_food_rev(result)
@@ -104,6 +126,11 @@ async def calc_food(ctx, nation_id):
 
 @bot.command(name="pnwcoal")
 async def calc_coal(ctx, nation_id):
+    if not check_guild(ctx.guild):
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use the !pnwcoal command in guild {ctx.guild.id}.\n')
+        LOG.flush()
+        await ctx.send("You do not have permission to use commands in this server. Please contact an admin for support.")
+        return
     # Get the coal query result
     result = pnw.get_query("coal", nation_id)
     net_coal, coal_production, coal_usage = pnw.calc_coal_rev(result)
