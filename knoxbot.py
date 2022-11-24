@@ -151,7 +151,7 @@ async def shutoff(ctx):
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) shut the bot off.\n')
         LOG.flush()
         await ctx.send(embed=embed)
-        exit()
+        await bot.close()
     # Otherwise, send an improper access message
     else:
         embed=discord.Embed(title="Improper Access", description=f'User {ctx.message.author} ({ctx.message.author.id}) does not have permissions to run this command. Contact an Admin to resolve this issue.', color=0xFF5733)
