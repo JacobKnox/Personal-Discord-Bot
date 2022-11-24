@@ -8,7 +8,7 @@ dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
 # save my API key in a variable
-API_KEY = os.getenv("API_KEY")
+API_KEY = os.getenv("PNW_API_KEY")
 RESOURCES  = {
     "af": ["oil", "bauxite", "uranium"],
     "an": ["oil", "coal", "uranium"],
@@ -30,9 +30,7 @@ kit = pnwkit.QueryKit(API_KEY)
 def calc_food_rev(api_result):
     nation = api_result.nations[0]
     # querying radiation information from GameInfo
-    radiation_query = get_query("radiation")
-    # attempting to process above query
-    radiation_result = radiation_query.get()
+    radiation_result = get_query("radiation")
     RADIATION = {
         "af": radiation_result.game_info.radiation.africa,
         "an": radiation_result.game_info.radiation.antarctica,
@@ -189,7 +187,7 @@ def calc_coal_rev(nation_call):
                 elif (temp_infra > 0):
                     power_usage += (math.ceil(temp_infra) / 100) * 1.2
                     temp_infra = 0
-    return round(coal_production - mill_usage - power_usage, 2)
+    return round(coal_production - mill_usage - power_usage, 2), coal_production, (mill_usage + power_usage)
 
 
 ### The following code is taken directly from the open source Rift project ###
@@ -291,6 +289,25 @@ def get_query(query_type = "general", nation_id = None):
                 north_america
                 south_america
             }
+            """)
+    elif query_type == "coal":
+        query = kit.query(
+            "nations", {
+                "id": int(nation_id),
+                "first": 1,
+            },
+            """
+            cities{
+                coal_mine
+                steel_mill
+                powered
+                coal_power
+                infrastructure
+            }
+            nation_name
+            continent
+            resource_production_center
+            iron_works
             """)
     elif query_type == "general":
         query = kit.query(

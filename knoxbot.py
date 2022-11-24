@@ -10,7 +10,6 @@ load_dotenv(dotenv_path)
 
 TOKEN = ENV("DISCORD_TOKEN")
 GUILD = ENV('DISCORD_GUILD')
-API_KEY = ENV("API_KEY")
 LOG = open("commands_log.log", "a")
 ADMINS = [int(id) for id in ENV("ADMIN_IDS").split(",")]
 
@@ -52,7 +51,7 @@ async def on_ready():
 async def calc_infra(ctx, *args):
     # If there are less than two arguments or more than three arguments, then it isn't a valid command call
     if len(args) < 2 or len(args) > 3:
-        embed=discord.Embed(title="Invalid Arguments", description="This function requires two or three arguments:\n!infra [nation id] [start] [end]\n!infra [start] [end]", color=0xFF5733)
+        embed=discord.Embed(title="Invalid Arguments", description="This function requires two or three arguments:\n!pnwinfra [nation id] [start] [end]\n!pnwinfra [start] [end]", color=0xFF5733)
     # If there are two arguments, then just calculate the difference between the two
     elif len(args) == 2:
         infra_cost = pnw.calculate_infrastructure_value(float(args[0]), float(args[1]))
@@ -64,7 +63,7 @@ async def calc_infra(ctx, *args):
         infra_cost = pnw.calc_infra_cost(result, float(args[1]), float(args[2]))
         embed=discord.Embed(title="Calculate Infrastructure Cost", description=f'The cost to go from {args[1]: ,.2f} to {args[2]: ,.2f} for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={args[0]}) is:\n${infra_cost: ,.2f}', color=0xFF5733)
     # Log the command usage
-    LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !infra command with args: {args}.\n')
+    LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwinfra command with args: {args}.\n')
     LOG.flush()
     await ctx.send(embed=embed)
 
@@ -80,7 +79,7 @@ async def calc_city(ctx, start, end, nation_id = None):
     else:
         city_cost = pnw.calc_city_cost(int(start), int(end))
         embed=discord.Embed(title="Calculate City Cost", description=f'The cost to go from {start} to {end} is:\n${city_cost: ,.2f}', color=0xFF5733)
-        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !city command with start {start} and end {end}.\n')
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwcity command with start {start} and end {end}.\n')
     # Log the command usage
     LOG.flush()
     await ctx.send(embed=embed)
@@ -99,7 +98,18 @@ async def calc_food(ctx, nation_id):
     net_food, food_production, food_usage = pnw.calc_food_rev(result)
     embed=discord.Embed(title="Food Statistics", description=f'Statistics about food revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(food_production): ,.2f}\nUsage: {food_usage: ,.2f}\nNet: {net_food: ,.2f}', color=0xFF5733)
     # Log the command usage
-    LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !food command with id {nation_id}.\n')
+    LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwfood command with id {nation_id}.\n')
+    LOG.flush()
+    await ctx.send(embed=embed)
+
+@bot.command(name="pnwcoal")
+async def calc_coal(ctx, nation_id):
+    # Get the coal query result
+    result = pnw.get_query("coal", nation_id)
+    net_coal, coal_production, coal_usage = pnw.calc_coal_rev(result)
+    embed=discord.Embed(title="Coal Statistics", description=f'Statistics about coal revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(coal_production): ,.2f}\nUsage: {coal_usage: ,.2f}\nNet: {net_coal: ,.2f}', color=0xFF5733)
+    # Log the command usage
+    LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwcoal command with id {nation_id}.\n')
     LOG.flush()
     await ctx.send(embed=embed)
 
@@ -129,5 +139,18 @@ async def clear_log(ctx):
     else:
         embed=discord.Embed(title="Improper Access", description=f'User {ctx.message.author} ({ctx.message.author.id}) does not have permissions to run this command. Contact an Admin to resolve this issue.', color=0xFF5733)
     await ctx.send(embed=embed)
+
+# Add a command to shut the bot off
+@bot.command(name="shutoff")
+async def shutoff(ctx):
+    # If the command user is an admin, then shut the bot off
+    if ctx.message.author.id in ADMINS:
+        embed=discord.Embed(title="Bot Shutoff", description=f'Admin {ctx.message.author} ({ctx.message.author.id}) has shutoff the bot.', color=0xFF5733)
+        await ctx.send(embed=embed)
+        exit()
+    # Otherwise, send an improper access message
+    else:
+        embed=discord.Embed(title="Improper Access", description=f'User {ctx.message.author} ({ctx.message.author.id}) does not have permissions to run this command. Contact an Admin to resolve this issue.', color=0xFF5733)
+        await ctx.send(embed=embed)
 
 bot.run(TOKEN)
