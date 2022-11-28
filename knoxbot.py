@@ -16,6 +16,7 @@ ALLOWED_GUILDS = [int(id) for id in ENV("ALLOWED_GUILDS").split(",")]
 
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 
+
 @bot.event
 async def on_ready():
     for guild in bot.guilds:
@@ -33,6 +34,15 @@ def check_guild(guild):
         return True
     else:
         return False
+    
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound):
+        await ctx.send("Oops... that command doesn't exist.")
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use command: {ctx.message.content}')
+        LOG.flush()
+        return
+    raise error
 
 
 
