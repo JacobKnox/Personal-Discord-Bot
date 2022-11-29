@@ -3,22 +3,30 @@ from os.path import join, dirname
 import discord
 from dotenv import load_dotenv
 from discord.ext import commands
-import pnw_utils as pnw
+import utils.pnw_utils as pnw
 
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
-
 TOKEN = ENV("DISCORD_TOKEN")
 GUILD = ENV('DISCORD_GUILD')
 LOG = open("commands_log.log", "a")
-ADMINS = [int(id) for id in ENV("ADMIN_IDS").split(",")]
-ALLOWED_GUILDS = [int(id) for id in ENV("ALLOWED_GUILDS").split(",")]
+
+def start():
+    global admins, allowed_guilds
+    with open(dotenv_path, "r") as f:
+        for line in f.readlines():
+            line = line.split("=")
+            if(line[0] == "ADMIN_IDS"):  
+                admins = [int(id) for id in line[1].split(",")]
+            elif(line[0] == "ALLOWED_GUILDS"):
+                allowed_guilds = [int(id) for id in line[1].split(",")]
+    print(allowed_guilds)
 
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 
-
 @bot.event
 async def on_ready():
+    start()
     for guild in bot.guilds:
         if guild.name == GUILD:
             break
@@ -30,7 +38,7 @@ async def on_ready():
     print(f'Guild Members:\n - {members}')
 
 def check_guild(guild):
-    if guild.id in ALLOWED_GUILDS:
+    if guild.id in allowed_guilds:
         return True
     else:
         return False
@@ -39,7 +47,7 @@ def check_guild(guild):
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
         await ctx.send("Oops... that command doesn't exist.")
-        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use command: {ctx.message.content}')
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use command: {ctx.message.content}\n')
         LOG.flush()
         return
     raise error
@@ -168,7 +176,7 @@ async def calc_coal(ctx, nation_id):
 @bot.command(name="clearlog")
 async def clear_log(ctx):
     # If the command user is an admin, then clear the log
-    if ctx.message.author.id in ADMINS:
+    if ctx.message.author.id in admins:
         with open("commands_log.log",'w') as _:
             pass
         embed=discord.Embed(title="Log Clear", description=f'Admin {ctx.message.author} ({ctx.message.author.id}) has cleared the logs.', color=0xFF5733)
@@ -183,7 +191,7 @@ async def clear_log(ctx):
 @bot.command(name="shutoff")
 async def shutoff(ctx):
     # If the command user is an admin, then shut the bot off
-    if ctx.message.author.id in ADMINS:
+    if ctx.message.author.id in admins:
         embed=discord.Embed(title="Bot Shutoff", description=f'Admin {ctx.message.author} ({ctx.message.author.id}) has shutoff the bot.', color=0xFF5733)
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) shut the bot off.\n')
         LOG.flush()
@@ -195,5 +203,23 @@ async def shutoff(ctx):
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to shut off the bot, but did not have proper access.\n')
         LOG.flush()
         await ctx.send(embed=embed)
+
+@bot.command(name="addserver")
+async def add_server(ctx):
+    global allowed_guilds
+    if ctx.message.author.id in admins:
+        with open(dotenv_path, "r") as f:
+            lines = f.readlines()
+        with open(dotenv_path, "w") as f:
+            for line in lines:
+                try:
+                    key, value = line.split('=')
+                    if key == "ALLOWED_GUILDS":
+                        value = '"' + value.replace('"', '') + f',{ctx.guild.id}"'
+                    f.write(f'{key}={value}')
+                except ValueError:
+                    # syntax error
+                    pass
+        start()
 
 bot.run(TOKEN)
