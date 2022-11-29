@@ -1,34 +1,47 @@
-from os import getenv as ENV
-from os.path import join, dirname
-import discord
+# ENV related imports
 from dotenv import load_dotenv
+from os import getenv as ENV
+# Path related imports
+from os.path import join, dirname
+# Discord related imports
+import discord
 from discord.ext import commands
+# Importing my utility files
 import utils.pnw_utils as pnw
+from utils.utils import *
 
+# Load the env from its path
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
+# Get important, constant info from the env
 TOKEN = ENV("DISCORD_TOKEN")
 GUILD = ENV('DISCORD_GUILD')
-LOG = open("commands_log.log", "a")
+LOG = open(ENV('LOG_DIRECTORY'), "a")
+admins, allowed_guilds = start(dotenv_path)
 
-def start():
-    global admins, allowed_guilds
-    admins = None
-    allowed_guilds = None
-    with open(dotenv_path, "r") as f:
-        for line in f.readlines():
-            line = line.split("=")
-            if(line[0] == "ADMIN_IDS"):  
-                admins = [int(id) for id in line[1].split(",")]
-            elif(line[0] == "ALLOWED_GUILDS"):
-                allowed_guilds = [int(id) for id in line[1].split(",")]
-    print(allowed_guilds)
-
+#Initialize the bot with a set prefix of ! and all possible Intents
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 
+
+
+
+
+##############
+#            #
+# BOT EVENTS #
+#            #
+##############
+
+
+
+
+
+# Event for when the bot is ready
 @bot.event
 async def on_ready():
+    # Call the start function to intialize the global admin and allowed_guilds variables
     start()
+    # Some random bs from the starter code that I will likely delete at some point
     for guild in bot.guilds:
         if guild.name == GUILD:
             break
@@ -39,18 +52,17 @@ async def on_ready():
     members = '\n - '.join([member.name for member in guild.members])
     print(f'Guild Members:\n - {members}')
 
-def check_guild(guild):
-    if guild.id in allowed_guilds:
-        return True
-    else:
-        return False
-    
+# Event for when a command error occurs
 @bot.event
 async def on_command_error(ctx, error):
+    # If the error is that the attempted command does not exist
     if isinstance(error, commands.CommandNotFound):
+        # Send a silly little message saying it doesn't exist (will change to an embed later)
         await ctx.send("Oops... that command doesn't exist.")
+        # Log that the user attempted to use this fictional command
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use command: {ctx.message.content}\n')
         LOG.flush()
+        # Return, so the error is not raised and bothers me in the console
         return
     raise error
 
@@ -76,7 +88,8 @@ async def on_command_error(ctx, error):
 # Add a command to calculate the cost of infrastructure
 @bot.command(name='pnwinfra')
 async def calc_infra(ctx, *args):
-    if not check_guild(ctx.guild):
+    # If the message was not sent in a permitted guild
+    if not check_guild(ctx.guild, allowed_guilds):
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use the !pnwinfra command in guild {ctx.guild.id}.\n')
         LOG.flush()
         await ctx.send("You do not have permission to use commands in this server. Please contact an admin for support.")
@@ -102,7 +115,7 @@ async def calc_infra(ctx, *args):
 # Add a command to calculate the cost to go from a city to another city
 @bot.command(name='pnwcity')
 async def calc_city(ctx, start, end, nation_id = None):
-    if not check_guild(ctx.guild):
+    if not check_guild(ctx.guild, allowed_guilds):
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use the !pnwcity command in guild {ctx.guild.id}.\n')
         LOG.flush()
         await ctx.send("You do not have permission to use commands in this server. Please contact an admin for support.")
@@ -130,7 +143,7 @@ async def calc_city(ctx, start, end, nation_id = None):
 # Add a command to calculate food revenue (usage, production, and net revenue) of a nation
 @bot.command(name="pnwfood")
 async def calc_food(ctx, nation_id):
-    if not check_guild(ctx.guild):
+    if not check_guild(ctx.guild, allowed_guilds):
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use the !pnwfood command in guild {ctx.guild.id}.\n')
         LOG.flush()
         await ctx.send("You do not have permission to use commands in this server. Please contact an admin for support.")
@@ -146,7 +159,7 @@ async def calc_food(ctx, nation_id):
 
 @bot.command(name="pnwcoal")
 async def calc_coal(ctx, nation_id):
-    if not check_guild(ctx.guild):
+    if not check_guild(ctx.guild, allowed_guilds):
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use the !pnwcoal command in guild {ctx.guild.id}.\n')
         LOG.flush()
         await ctx.send("You do not have permission to use commands in this server. Please contact an admin for support.")
@@ -218,12 +231,15 @@ async def clear_log(ctx):
 async def shutoff(ctx):
     # If the command user is an admin, then shut the bot off
     if ctx.message.author.id in admins:
+        # Create an embed saying that the bot was shut off by this specific admin
         embed=discord.Embed(title="Bot Shutoff", description=f'Admin {ctx.message.author} ({ctx.message.author.id}) has shutoff the bot.', color=0xFF5733)
+        # Write to the log that the bot was shut off
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) shut the bot off.\n')
         LOG.flush()
+        # Send the embed and shut the bot off
         await ctx.send(embed=embed)
         await bot.close()
-    # Otherwise, send an improper access message
+    # Otherwise, send an improper access message and log that they attempted it
     else:
         embed=discord.Embed(title="Improper Access", description=f'User {ctx.message.author} ({ctx.message.author.id}) does not have permissions to run this command. Contact an Admin to resolve this issue.', color=0xFF5733)
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to shut off the bot, but did not have proper access.\n')
@@ -232,6 +248,7 @@ async def shutoff(ctx):
 
 @bot.command(name="addserver")
 async def add_server(ctx):
+    global admins, allowed_guilds
     if ctx.message.author.id in admins:
         with open(dotenv_path, "r") as f:
             lines = f.readlines()
@@ -245,6 +262,6 @@ async def add_server(ctx):
                 except ValueError:
                     # syntax error
                     pass
-        start()
+        admins, allowed_guilds = start(dotenv_path)
 
 bot.run(TOKEN)
