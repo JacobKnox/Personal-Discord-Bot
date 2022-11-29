@@ -223,7 +223,7 @@ def calculate_infrastructure_value(start: float, end: float, /) -> float:
 
 ### End of code from Rift ###
 
-def get_query(query_type = "general", nation_id = None, api_key = None):
+def get_query(query_type = "general", nation_id = None, api_key = API_KEY):
     if query_type == "food":
         query = kit.query(
             "nations", {
@@ -344,17 +344,29 @@ def get_query(query_type = "general", nation_id = None, api_key = None):
                 resource_production_center
                 """)
     elif query_type == "my_info":
-        temp_kit = pnwkit.QueryKit(api_key)
-        query = temp_kit.query(
-                "nations", {
-                    "id": nation_id,
-                    "first": 1
-                }, """
-                soldiers
-                tanks
-                aircraft
-                ships
-                """)
+        if api_key == API_KEY:
+            query = kit.query(
+                    "nations", {
+                        "id": nation_id,
+                        "first": 1
+                    }, """
+                    soldiers
+                    tanks
+                    aircraft
+                    ships
+                    """)
+        else:
+            temp_kit = pnwkit.QueryKit(api_key)
+            query = temp_kit.query(
+                    "nations", {
+                        "id": nation_id,
+                        "first": 1
+                    }, """
+                    soldiers
+                    tanks
+                    aircraft
+                    ships
+                    """)
     return query.get()
         
 # "Test" API call to get a bunch of information
