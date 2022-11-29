@@ -13,6 +13,8 @@ LOG = open("commands_log.log", "a")
 
 def start():
     global admins, allowed_guilds
+    admins = None
+    allowed_guilds = None
     with open(dotenv_path, "r") as f:
         for line in f.readlines():
             line = line.split("=")
@@ -159,6 +161,19 @@ async def calc_coal(ctx, nation_id):
     await ctx.send(embed=embed)
 
 
+#################
+# USER COMMANDS #
+#################
+
+
+@bot.command(name="myinfo")
+async def my_info(ctx, nation_id, api_key):
+    await ctx.message.delete()
+    result = pnw.get_query("my_info", nation_id, api_key)
+    nation = result.nations[0]
+    embed=discord.Embed(title=f'Info for {nation.nation_name}',description=f'Military\nSoldiers: {nation.soldiers}\nTanks: {nation.tanks}\nAircraft: {nation.aircraft}\nShips: {nation.ships}')
+
+
 
 
 
@@ -206,7 +221,6 @@ async def shutoff(ctx):
 
 @bot.command(name="addserver")
 async def add_server(ctx):
-    global allowed_guilds
     if ctx.message.author.id in admins:
         with open(dotenv_path, "r") as f:
             lines = f.readlines()
