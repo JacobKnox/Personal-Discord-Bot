@@ -166,12 +166,16 @@ async def calc_coal(ctx, nation_id):
 #################
 
 
-@bot.command(name="myinfo")
+@bot.command(name="mypnwinfo")
 async def my_info(ctx, nation_id, api_key):
     await ctx.message.delete()
     result = pnw.get_query("my_info", nation_id, api_key)
     nation = result.nations[0]
     embed=discord.Embed(title=f'Info for {nation.nation_name}',description=f'Military\nSoldiers: {nation.soldiers}\nTanks: {nation.tanks}\nAircraft: {nation.aircraft}\nShips: {nation.ships}')
+    # Log the command usage
+    LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !mypnwinfo command with id {nation_id}.\n')
+    LOG.flush()
+    await ctx.send(embed=embed)
 
 
 
