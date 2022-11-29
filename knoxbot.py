@@ -90,8 +90,10 @@ async def on_command_error(ctx, error):
 async def calc_infra(ctx, *args):
     # If the message was not sent in a permitted guild
     if not check_guild(ctx.guild, allowed_guilds):
+        # Write to the log that they attempted to use the command in the guild
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use the !pnwinfra command in guild {ctx.guild.id}.\n')
         LOG.flush()
+        # Let the user know they don't have permission to us it
         await ctx.send("You do not have permission to use commands in this server. Please contact an admin for support.")
         return
     # If there are less than two arguments or more than three arguments, then it isn't a valid command call

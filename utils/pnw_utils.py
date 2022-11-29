@@ -1,14 +1,17 @@
-import os
+# Path related imports
 from os.path import join, dirname
+# Env related imports
 from dotenv import load_dotenv
-import pnwkit
-import math
+from os import getenv as ENV
+# Other import modules
+import pnwkit # PnW's Python API kit
+import math # Python's math library
 
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
 # save my API key in a variable
-API_KEY = os.getenv("PNW_API_KEY")
+API_KEY = ENV("PNW_API_KEY")
 RESOURCES  = {
     "af": ["oil", "bauxite", "uranium"],
     "an": ["oil", "coal", "uranium"],
