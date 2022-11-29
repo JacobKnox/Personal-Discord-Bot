@@ -40,7 +40,7 @@ bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 @bot.event
 async def on_ready():
     # Call the start function to intialize the global admin and allowed_guilds variables
-    start()
+    start(dotenv_path)
     # Some random bs from the starter code that I will likely delete at some point
     for guild in bot.guilds:
         if guild.name == GUILD:
@@ -250,6 +250,13 @@ async def shutoff(ctx):
 async def add_server(ctx):
     global admins, allowed_guilds
     if ctx.message.author.id in admins:
+        if check_guild(ctx.guild, allowed_guilds):
+            embed=discord.Embed(title="Already Permitted", description=f'Server {ctx.guild} ({ctx.guild.id}) is already an allowed server for bot commands.')
+            LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to add server {ctx.guild} ({ctx.guild.id}), but that server already has permission.\n')
+            LOG.flush()
+            await ctx.send(embed=embed)
+            return
+        found = False
         with open(dotenv_path, "r") as f:
             lines = f.readlines()
         with open(dotenv_path, "w") as f:
@@ -257,11 +264,20 @@ async def add_server(ctx):
                 try:
                     key, value = line.split('=')
                     if key == "ALLOWED_GUILDS":
-                        value = '"' + value.replace('"', '') + f',{ctx.guild.id}"'
+                        value = f'{value},{ctx.guild.id}'
+                        found = True
                     f.write(f'{key}={value}')
                 except ValueError:
                     # syntax error
                     pass
+            if not found:
+                f.write(f'\nALLOWED_GUILDS={ctx.guild.id}')
         admins, allowed_guilds = start(dotenv_path)
+    else:
+        embed=discord.Embed(title="Improper Access", description=f'User {ctx.message.author} ({ctx.message.author.id}) does not have permissions to run this command. Contact an Admin to resolve this issue.', color=0xFF5733)
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to add server {ctx.guild} ({ctx.guild.id}), but did not have proper access.\n')
+        LOG.flush()
+        await ctx.send(embed=embed)
+        return
 
 bot.run(TOKEN)

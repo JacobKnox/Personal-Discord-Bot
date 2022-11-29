@@ -8,13 +8,13 @@ def check_guild(guild, allowed_guilds):
 # A utility function to initialize (or re-define) certain variables
 def start(dotenv_path):
     # Initialize the variables to None in case they don't exist in the env file
-    admins = None
-    allowed_guilds = None
+    admins = []
+    allowed_guilds = []
     # Open the env file
     with open(dotenv_path, "r") as f:
         # Loop through the lines and split them on the equals
         for line in f.readlines():
-            key, value = line.split("=")
+            key, value = line.strip().split("=")
             # If the key is ADMIN_IDS, then parse it
             if(key == "ADMIN_IDS"):  
                 admins = [int(id) for id in value.split(",")]
