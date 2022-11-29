@@ -10,7 +10,7 @@ Shuts the bot off
 ### !addserver (guild_id)
 Adds a server to the list of permitted servers
 - guild_id: Id of the server to add. If not specified, defaults to the id of the server the command was used in.
-## Politics and War Commands
+## (Politics and War)[https://politicsandwar.com/] Commands
 ### !pnwinfra (nation_id) \[start\] \[end\]
 Calculates the cost to go from start infra level to end infra level
 - nation_id: Optionally specify a nation id to get the specific cost for that nation (takes into account projects and policies)
