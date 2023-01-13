@@ -1,5 +1,15 @@
 import discord
 
+COMMAND_ARGS = {
+    "clearlog": "",
+    "shutoff": "",
+    "addserver": "(guild_id)",
+    "pnwinfra": "start end (nation_id)",
+    "pnwcity": "start end (nation_id)",
+    "pnwfood": "nation_id",
+    "pnwcoal": "nation_id"
+}
+
 # A utility function to check whether or not a guild is a currently permitted guild
 def check_guild(guild, allowed_guilds):
     if guild.id in allowed_guilds:
@@ -7,17 +17,22 @@ def check_guild(guild, allowed_guilds):
     else:
         return False
 
-# A utility function to check and handle an event where a message is not sent in a permitted guild
-async def handle_guild(LOG, ctx, allowed_guilds):
+def generic_tasks(LOG, ctx, allowed_guilds, args):
+    print(args)
     if(not check_guild(ctx.guild, allowed_guilds)):
         # Write to the log that they attempted to use the command in the guild
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use the !{ctx.command} command in guild {ctx.guild.id}.\n')
         LOG.flush()
         # Let the user know they don't have permission to us it
         embed = discord.Embed(title="Current Server Not Permitted", description="You do not have permission to use commands in this server. Please contact an admin for support.", color=0xFF5733)
-        await ctx.send(embed=embed)
-        return False
-    return True
+        return embed, True
+    if [x for x in (args) if x is None] or args[len(args) - 1] in ['-h', '-help', 'help']:
+        embed=discord.Embed(title="Required Arguments", description=f"Arguments in parenthesis denote optional arguments.\n!{ctx.command} {COMMAND_ARGS[str(ctx.command)]}", color=0xFF5733)
+        return embed, True
+    if args[len(args) - 1] is not None:
+        embed=discord.Embed(title="Invalid Arguments", description=f"Arguments in parenthesis denote optional arguments.\n!{ctx.command} {COMMAND_ARGS[str(ctx.command)]}", color=0xFF5733)
+        return embed, True
+    return None, False
 
 # A utility function to message when the user is not an admin
 async def non_admin(LOG, ctx):

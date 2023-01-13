@@ -146,20 +146,21 @@ def calc_city_cost(start_city, goal_city, nation_call = None):
 
 # function to calculate the cost of buying infra from a current amount to a goal amount
 # accurate within a few tens or ones for multiples of 100, but within a few thousands for non-multiples of 100
-def calc_infra_cost(nation_call, current_infra, goal_infra):
+def calc_infra_cost(current_infra, goal_infra, nation_call = None):
     infra_cost = calculate_infrastructure_value(current_infra, goal_infra)
-    nation = nation_call.nations[0]
-    if (infra_cost > 0):
-        modifier = 1
-        if(nation.center_for_civil_engineering):
-            modifier -= 0.05
-            if(nation.advanced_engineering_corps):
+    if nation_call is not None:
+        nation = nation_call.nations[0]
+        if (infra_cost > 0):
+            modifier = 1
+            if(nation.center_for_civil_engineering):
                 modifier -= 0.05
-        if (nation.domestic_policy == pnwkit.data.DomesticPolicy(5) and nation.government_support_agency):
-            modifier -= 0.075
-        elif (nation.domestic_policy == pnwkit.data.DomesticPolicy(5)):
-            modifier -= 0.05
-        infra_cost *= modifier
+                if(nation.advanced_engineering_corps):
+                    modifier -= 0.05
+            if (nation.domestic_policy == pnwkit.data.DomesticPolicy(5) and nation.government_support_agency):
+                modifier -= 0.075
+            elif (nation.domestic_policy == pnwkit.data.DomesticPolicy(5)):
+                modifier -= 0.05
+            infra_cost *= modifier
     return round(infra_cost, 2)
 
 
