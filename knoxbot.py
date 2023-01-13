@@ -17,6 +17,7 @@ load_dotenv(dotenv_path)
 TOKEN = ENV("DISCORD_TOKEN")
 GUILD = ENV('DISCORD_GUILD')
 LOG = open(ENV('LOG_DIRECTORY'), "a")
+ERROR_LOG = open(ENV('ERROR_LOG_DIRECTORY'), "a")
 admins, allowed_guilds = start(dotenv_path)
 
 #Initialize the bot with a set prefix of ! and all possible Intents
@@ -57,11 +58,12 @@ async def on_ready():
 async def on_command_error(ctx, error):
     # If the error is that the attempted command does not exist
     if isinstance(error, commands.CommandNotFound):
-        # Send a silly little message saying it doesn't exist (will change to an embed later)
-        await ctx.send("Oops... that command doesn't exist.")
+        # Send a message saying it doesn't exist
+        embed = discord.Embed(title="Command Not Found", description=f"The command you attempted to use, {ctx.command}, does not currently exist.", color=0xFF5733)
+        await ctx.send(embed=embed)
         # Log that the user attempted to use this fictional command
-        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use command: {ctx.message.content}\n')
-        LOG.flush()
+        ERROR_LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use non-existent command: {ctx.message.content}\n')
+        ERROR_LOG.flush()
         # Return, so the error is not raised and bothers me in the console
         return
     raise error
@@ -88,13 +90,8 @@ async def on_command_error(ctx, error):
 # Add a command to calculate the cost of infrastructure
 @bot.command(name='pnwinfra')
 async def calc_infra(ctx, *args):
-    # If the message was not sent in a permitted guild
-    if not check_guild(ctx.guild, allowed_guilds):
-        # Write to the log that they attempted to use the command in the guild
-        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use the !pnwinfra command in guild {ctx.guild.id}.\n')
-        LOG.flush()
-        # Let the user know they don't have permission to us it
-        await ctx.send("You do not have permission to use commands in this server. Please contact an admin for support.")
+    # Check if the message was not sent in a permitted guild
+    if not handle_guild(LOG, ctx, allowed_guilds):
         return
     # If there are less than two arguments or more than three arguments, then it isn't a valid command call
     if len(args) < 2 or len(args) > 3:
@@ -117,10 +114,7 @@ async def calc_infra(ctx, *args):
 # Add a command to calculate the cost to go from a city to another city
 @bot.command(name='pnwcity')
 async def calc_city(ctx, start, end, nation_id = None):
-    if not check_guild(ctx.guild, allowed_guilds):
-        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use the !pnwcity command in guild {ctx.guild.id}.\n')
-        LOG.flush()
-        await ctx.send("You do not have permission to use commands in this server. Please contact an admin for support.")
+    if not handle_guild(LOG, ctx, allowed_guilds):
         return
     if nation_id is not None:
         # Get the city query result
@@ -145,10 +139,7 @@ async def calc_city(ctx, start, end, nation_id = None):
 # Add a command to calculate food revenue (usage, production, and net revenue) of a nation
 @bot.command(name="pnwfood")
 async def calc_food(ctx, nation_id):
-    if not check_guild(ctx.guild, allowed_guilds):
-        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use the !pnwfood command in guild {ctx.guild.id}.\n')
-        LOG.flush()
-        await ctx.send("You do not have permission to use commands in this server. Please contact an admin for support.")
+    if not handle_guild(LOG, ctx, allowed_guilds):
         return
     # Get the food query result
     result = pnw.get_query("food", nation_id)
@@ -161,10 +152,7 @@ async def calc_food(ctx, nation_id):
 
 @bot.command(name="pnwcoal")
 async def calc_coal(ctx, nation_id):
-    if not check_guild(ctx.guild, allowed_guilds):
-        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use the !pnwcoal command in guild {ctx.guild.id}.\n')
-        LOG.flush()
-        await ctx.send("You do not have permission to use commands in this server. Please contact an admin for support.")
+    if not handle_guild(LOG, ctx, allowed_guilds):
         return
     # Get the coal query result
     result = pnw.get_query("coal", nation_id)
@@ -221,12 +209,10 @@ async def clear_log(ctx):
         with open("commands_log.log",'w') as _:
             pass
         embed=discord.Embed(title="Log Clear", description=f'Admin {ctx.message.author} ({ctx.message.author.id}) has cleared the logs.', color=0xFF5733)
+        await ctx.send(embed=embed)
+        return
     # Otherwise, send an improper access message
-    else:
-        embed=discord.Embed(title="Improper Access", description=f'User {ctx.message.author} ({ctx.message.author.id}) does not have permissions to run this command. Contact an Admin to resolve this issue.', color=0xFF5733)
-        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to clear the logs, but did not have proper access.\n')
-        LOG.flush()
-    await ctx.send(embed=embed)
+    non_admin(LOG, ctx)
 
 # Add a command to shut the bot off
 @bot.command(name="shutoff")
@@ -242,11 +228,7 @@ async def shutoff(ctx):
         await ctx.send(embed=embed)
         await bot.close()
     # Otherwise, send an improper access message and log that they attempted it
-    else:
-        embed=discord.Embed(title="Improper Access", description=f'User {ctx.message.author} ({ctx.message.author.id}) does not have permissions to run this command. Contact an Admin to resolve this issue.', color=0xFF5733)
-        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to shut off the bot, but did not have proper access.\n')
-        LOG.flush()
-        await ctx.send(embed=embed)
+    non_admin(LOG, ctx)
 
 @bot.command(name="addserver")
 async def add_server(ctx, guild_id=None):
@@ -277,11 +259,8 @@ async def add_server(ctx, guild_id=None):
             if not found:
                 f.write(f'\nALLOWED_GUILDS={guild_id}')
         admins, allowed_guilds = start(dotenv_path)
-    else:
-        embed=discord.Embed(title="Improper Access", description=f'User {ctx.message.author} ({ctx.message.author.id}) does not have permissions to run this command. Contact an Admin to resolve this issue.', color=0xFF5733)
-        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to add server {guild_id}, but did not have proper access.\n')
-        LOG.flush()
-        await ctx.send(embed=embed)
+        # need to write that it was successful
         return
+    non_admin(LOG, ctx)
 
 bot.run(TOKEN)

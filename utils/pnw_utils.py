@@ -127,6 +127,7 @@ def calc_city_cost(start_city, goal_city, nation_call = None):
             # if the nation has Advanced Urban Planning project, apply it
             if (nation_call.nations[0].advanced_urban_planning):
                 city_cost -= 100000000
+                # if the nation has Metropolitan Planning project, apply it
             if (nation_call.nations[0].metropolitan_planning):
                 city_cost -= 150000000
             # if the nation's domestic policy is currently Manifest Destiny, apply it
