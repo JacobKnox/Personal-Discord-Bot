@@ -10,7 +10,8 @@ COMMAND_ARGS = {
     "pnwcity": "start end (nation_id)",
     "pnwfood": "nation_id",
     "pnwcoal": "nation_id",
-    "pnwiron": "nation_id"
+    "pnwiron": "nation_id",
+    "pnwoil": "nation_id"
 }
 
 # A utility function to check whether or not a guild is a currently permitted guild
@@ -21,7 +22,6 @@ def check_guild(guild, allowed_guilds):
         return False
 
 def generic_tasks(LOG, ctx, allowed_guilds, args):
-    print(args)
     if(not check_guild(ctx.guild, allowed_guilds)):
         # Write to the log that they attempted to use the command in the guild
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use the !{ctx.command} command in guild {ctx.guild.id}.\n')

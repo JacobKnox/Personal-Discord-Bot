@@ -87,7 +87,6 @@ def calc_food_rev(api_result):
     # save the continent into a variable
     continent = nation.continent
     continent_radiation = RADIATION[continent]
-    print(f"{continent}: {continent_radiation}")
     # if they're on North America, Europe, or Asia
     if (continent in ["na", "eu", "as"]):
         # summer
@@ -225,6 +224,36 @@ def calc_iron_rev(nation_call):
         mill_usage += city_mill
     return round(iron_production - mill_usage, 2), iron_production, (mill_usage)
 
+def calc_oil_rev(nation_call):
+    nation = nation_call.nations[0]
+    # initialize helper variables for production and usage to 0
+    oil_production = 0
+    mill_usage = 0
+    power_usage = 0
+    if(nation.resource_production_center and "oil" in RESOURCES[nation.continent] and len(nation.cities) < 16):
+        oil_production += (1 + math.floor(min(len(nation.cities), 10) / 2)) * 12
+    # loop over each city in the nation
+    for city in nation.cities:
+        # calculate its oil production
+        city_oil = city.oil_well * 3
+        city_oil *= (1 + ((city.oil_well - 1) * 0.055555555555))
+        oil_production += city_oil
+        city_mill = city.gasrefinery * 3
+        city_mill *= (1 + ((city.gasrefinery - 1) * 0.125))
+        if (nation.emergency_gasoline_reserve):
+            city_mill *= 1.36
+        mill_usage += city_mill
+        if (city.powered and city.oil_power > 0):
+            temp_infra = city.infrastructure
+            for _ in range(0, city.oil_power):
+                if (temp_infra >= 500):
+                    power_usage += 6
+                    temp_infra -= 500
+                elif (temp_infra > 0):
+                    power_usage += (math.ceil(temp_infra) / 100) * 1.2
+                    temp_infra = 0
+    return round(oil_production - mill_usage - power_usage, 2), oil_production, (mill_usage + power_usage)
+
 
 ### The following code is taken directly from the open source Rift project ###
 ### (https://github.com/mrvillage/rift/blob/master/bot/src/funcs/tools.py) ###
@@ -343,11 +372,15 @@ def get_query(query_type = "general", nation_id = None, api_key = API_KEY):
                 powered
                 coal_power
                 infrastructure
+                oil_well
+                oil_power
+                gasrefinery
             }
             nation_name
             continent
             resource_production_center
             iron_works
+            emergency_gasoline_reserve
             """)
     elif query_type == "general":
         query = kit.query(

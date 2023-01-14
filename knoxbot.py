@@ -67,9 +67,10 @@ async def on_command_error(ctx, error):
         # Log that the user attempted to use this fictional command
         ERROR_LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use non-existent command: {ctx.message.content}\n')
         ERROR_LOG.flush()
-        # Return, so the error is not raised and bothers me in the console
         return
-    raise error
+    me = bot.get_user(admins[0])
+    await me.send(f"There has been an error: {error.__class__.__name__}\n{', '.join(error.args)}")
+    return
 
 
 
@@ -169,6 +170,24 @@ async def calc_coal(ctx, nation_id: typing.Optional[int], *, args=None):
     embed=discord.Embed(title="Coal Statistics", description=f'Statistics about coal revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(coal_production): ,.2f}\nUsage: {coal_usage: ,.2f}\nNet: {net_coal: ,.2f}', color=0xFF5733)
     # Log the command usage
     LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwcoal command with id {nation_id}.\n')
+    LOG.flush()
+    await ctx.send(embed=embed)
+    
+# Add a command to calculate oil revenue (usage, production, and net revenue) of a nation
+@bot.command(name="pnwoil")
+async def calc_coal(ctx, nation_id: typing.Optional[int], *, args=None):
+    embed, flag = generic_tasks(LOG, ctx, allowed_guilds, args = [nation_id, args])
+    if flag:
+        await ctx.send(embed=embed)
+        return
+    result, flag = resource_tasks(nation_id)
+    if flag:
+        await ctx.send(embed=result)
+        return
+    net_oil, oil_production, oil_usage = pnw.calc_oil_rev(result)
+    embed=discord.Embed(title="Oil Statistics", description=f'Statistics about oil revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(oil_production): ,.2f}\nUsage: {oil_usage: ,.2f}\nNet: {net_oil: ,.2f}', color=0xFF5733)
+    # Log the command usage
+    LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwoil command with id {nation_id}.\n')
     LOG.flush()
     await ctx.send(embed=embed)
     
