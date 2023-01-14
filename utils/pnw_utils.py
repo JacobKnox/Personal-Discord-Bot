@@ -46,11 +46,17 @@ def calc_food_rev(api_result):
     
     # intialize the food_usage variable with the usage from population
     food_usage = nation.population / 1000
-    # if the nation is in any wars
-    if (len(nation.defensive_wars) > 0 or len(nation.offensive_wars) > 0):
-        # add the usage from soldiers in wartime
-        food_usage += nation.soldiers / 500
-    else:
+    # merge the wars lists into one list
+    wars = nation.defensive_wars + nation.offensive_wars
+    flag = False
+    # loop over the wars and check if any of them have turns left (it's currently going)
+    for war in wars:
+        if war.turns_left > 0:
+            # add the usage from soldiers in wartime
+            food_usage += nation.soldiers / 500
+            flag = True
+            break
+    if(not flag):
         # add the usage from soldiers in peacetime
         food_usage += nation.soldiers / 750
     # initialize the food_production variable to 0
@@ -71,7 +77,7 @@ def calc_food_rev(api_result):
         # if the nation has more than one farm
         if (city.farm > 1):
             # apply the production bonus
-            city_production *= 1 + (city.farm - 1) * 0.0263157894737
+            city_production *= 1 + round((city.farm - 1) * 0.0263157894737, 2)
         # add the current city's production to the nation's total production
         food_production += city_production
     # the seasonal affect on food production (need to check what continent and season the nation is on)
@@ -79,13 +85,14 @@ def calc_food_rev(api_result):
     # save the continent into a variable
     continent = nation.continent
     continent_radiation = RADIATION[continent]
+    print(f"{continent}: {continent_radiation}")
     # if they're on North America, Europe, or Asia
     if (continent in ["na", "eu", "as"]):
         # summer
         if (radiation_result.game_info.game_date.month > 5 and radiation_result.game_info.game_date.month < 9):
             season_affect = 1.2
         # winter
-        else:
+        elif(radiation_result.game_info.game_date.month > 11 or radiation_result.game_info.game_date.month < 3):
             season_affect = 0.8
     # if they're on South America, Africa, or Australia
     elif (continent in ["sa", "af", "au"]):
@@ -93,7 +100,7 @@ def calc_food_rev(api_result):
         if (radiation_result.game_info.game_date.month > 5 and radiation_result.game_info.game_date.month < 9):
             season_affect = 0.8
         # summer
-        else:
+        elif(radiation_result.game_info.game_date.month > 11 or radiation_result.game_info.game_date.month < 3):
             season_affect = 1.2
     # if they're on Antarctica
     else:
@@ -101,6 +108,8 @@ def calc_food_rev(api_result):
         season_affect = 0.5
     # calculate the radiation factor on food production
     radiationFactor = 1 - ((continent_radiation + radiation_result.game_info.radiation.global_) / 1000)
+    if(nation.fallout_shelter and radiationFactor < 0.1):
+        radiationFactor = 0.1
     # apply the seasonal factor to the total production
     food_production *= season_affect
     # apply the radiation factor to the total production
@@ -194,6 +203,26 @@ def calc_coal_rev(nation_call):
                     temp_infra = 0
     return round(coal_production - mill_usage - power_usage, 2), coal_production, (mill_usage + power_usage)
 
+def calc_iron_rev(nation_call):
+    nation = nation_call.nations[0]
+    # initialize helper variables for production and usage to 0
+    iron_production = 0
+    mill_usage = 0
+    if(nation.resource_production_center and "iron" in RESOURCES[nation.continent] and len(nation.cities) < 16):
+        iron_production += (1 + math.floor(min(len(nation.cities), 10) / 2)) * 12
+    # loop over each city in the nation
+    for city in nation.cities:
+        # calculate its coal production
+        city_iron = city.iron_mine * 3
+        city_iron *= (1 + ((city.iron_mine - 1) * 0.055555555555))
+        iron_production += city_iron
+        city_mill = city.steel_mill * 3
+        city_mill *= (1 + ((city.steel_mill - 1) * 0.125))
+        if (nation.iron_works):
+            city_mill *= 1.36
+        mill_usage += city_mill
+    return round(iron_production - mill_usage, 2), iron_production, (mill_usage)
+
 
 ### The following code is taken directly from the open source Rift project ###
 ### (https://github.com/mrvillage/rift/blob/master/bot/src/funcs/tools.py) ###
@@ -241,8 +270,10 @@ def get_query(query_type = "general", nation_id = None, api_key = API_KEY):
                 land
             }
             defensive_wars{
+                turns_left
             }
             offensive_wars{
+                turns_left
             }
             soldiers
             nation_name
@@ -250,6 +281,7 @@ def get_query(query_type = "general", nation_id = None, api_key = API_KEY):
             continent
             resource_production_center
             massirr
+            fallout_shelter
             """)
     elif query_type == "city":
         query = kit.query(
@@ -295,7 +327,7 @@ def get_query(query_type = "general", nation_id = None, api_key = API_KEY):
                 south_america
             }
             """)
-    elif query_type == "coal":
+    elif query_type == "resource":
         query = kit.query(
             "nations", {
                 "id": int(nation_id),
@@ -304,6 +336,7 @@ def get_query(query_type = "general", nation_id = None, api_key = API_KEY):
             """
             cities{
                 coal_mine
+                iron_mine
                 steel_mill
                 powered
                 coal_power

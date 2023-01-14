@@ -162,9 +162,25 @@ async def calc_coal(ctx, nation_id: typing.Optional[int], *, args=None):
         await ctx.send(embed=embed)
         return
     # Get the coal query result
-    result = pnw.get_query("coal", nation_id)
+    result = pnw.get_query("resource", nation_id)
     net_coal, coal_production, coal_usage = pnw.calc_coal_rev(result)
     embed=discord.Embed(title="Coal Statistics", description=f'Statistics about coal revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(coal_production): ,.2f}\nUsage: {coal_usage: ,.2f}\nNet: {net_coal: ,.2f}', color=0xFF5733)
+    # Log the command usage
+    LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwcoal command with id {nation_id}.\n')
+    LOG.flush()
+    await ctx.send(embed=embed)
+    
+# Add a command to calculate iron revenue (usage, production, and net revenue) of a nation
+@bot.command(name="pnwiron")
+async def calc_coal(ctx, nation_id: typing.Optional[int], *, args=None):
+    embed, flag = generic_tasks(LOG, ctx, allowed_guilds, args = [nation_id, args])
+    if flag:
+        await ctx.send(embed=embed)
+        return
+    # Get the coal query result
+    result = pnw.get_query("resource", nation_id)
+    net_iron, iron_production, iron_usage = pnw.calc_iron_rev(result)
+    embed=discord.Embed(title="Iron Statistics", description=f'Statistics about iron revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(iron_production): ,.2f}\nUsage: {iron_usage: ,.2f}\nNet: {net_iron: ,.2f}', color=0xFF5733)
     # Log the command usage
     LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwcoal command with id {nation_id}.\n')
     LOG.flush()

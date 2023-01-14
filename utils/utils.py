@@ -4,10 +4,12 @@ COMMAND_ARGS = {
     "clearlog": "",
     "shutoff": "",
     "addserver": "(guild_id)",
+    "restart": "",
     "pnwinfra": "start end (nation_id)",
     "pnwcity": "start end (nation_id)",
     "pnwfood": "nation_id",
-    "pnwcoal": "nation_id"
+    "pnwcoal": "nation_id",
+    "pnwiron": "nation_id"
 }
 
 # A utility function to check whether or not a guild is a currently permitted guild
@@ -26,7 +28,7 @@ def generic_tasks(LOG, ctx, allowed_guilds, args):
         # Let the user know they don't have permission to us it
         embed = discord.Embed(title="Current Server Not Permitted", description="You do not have permission to use commands in this server. Please contact an admin for support.", color=0xFF5733)
         return embed, True
-    if [x for x in (args) if x is None] or args[len(args) - 1] in ['-h', '-help', 'help']:
+    if not [x for x in (args) if x is None] or args[len(args) - 1] in ['-h', '-help', 'help']:
         embed=discord.Embed(title="Required Arguments", description=f"Arguments in parenthesis denote optional arguments.\n!{ctx.command} {COMMAND_ARGS[str(ctx.command)]}", color=0xFF5733)
         return embed, True
     if args[len(args) - 1] is not None:
