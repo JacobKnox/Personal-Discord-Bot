@@ -29,3 +29,6 @@ Calculates the food production, usage, and net revenue for a nation
 ### !pnwcoal \[nation_id\]
 Calculates the coal production, usage, and net revenue for a nation
 - nation_id: The nation whose coal information is to be calculated
+### !pnwiron \[nation_id\]
+Calculates the iron production, usage, and net revenue for a nation
+- nation_id: The nation whose iron information is to be calculated

@@ -7,6 +7,8 @@ from os import getenv as ENV
 import pnwkit # PnW's Python API kit
 import math # Python's math library
 
+from exceptions import *
+
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
@@ -405,7 +407,15 @@ def get_query(query_type = "general", nation_id = None, api_key = API_KEY):
                     aircraft
                     ships
                     """)
-    return query.get()
+    try:
+        result = query.get()
+        if len(result.nations) == 0:
+            raise NoNationFoundException("No nation exists with that nation id.")
+        return result
+    except NoNationFoundException as inst:
+        raise inst
+    except Exception as inst:
+        raise GeneralException(inst)
         
 # "Test" API call to get a bunch of information
 general_query = get_query(nation_id = 244934)

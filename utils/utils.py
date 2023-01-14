@@ -1,4 +1,5 @@
 import discord
+import utils.pnw_utils as pnw
 
 COMMAND_ARGS = {
     "clearlog": "",
@@ -28,13 +29,22 @@ def generic_tasks(LOG, ctx, allowed_guilds, args):
         # Let the user know they don't have permission to us it
         embed = discord.Embed(title="Current Server Not Permitted", description="You do not have permission to use commands in this server. Please contact an admin for support.", color=0xFF5733)
         return embed, True
-    if not [x for x in (args) if x is None] or args[len(args) - 1] in ['-h', '-help', 'help']:
+    if len([x for x in (args) if x is None]) == len(args) or args[len(args) - 1] in ['-h', '-help', 'help']:
         embed=discord.Embed(title="Required Arguments", description=f"Arguments in parenthesis denote optional arguments.\n!{ctx.command} {COMMAND_ARGS[str(ctx.command)]}", color=0xFF5733)
         return embed, True
     if args[len(args) - 1] is not None:
         embed=discord.Embed(title="Invalid Arguments", description=f"Arguments in parenthesis denote optional arguments.\n!{ctx.command} {COMMAND_ARGS[str(ctx.command)]}", color=0xFF5733)
         return embed, True
     return None, False
+
+def resource_tasks(nation_id):
+    # Get the resource query result
+    try:
+        result = pnw.get_query("resource", nation_id)
+    except Exception as inst:
+        embed=discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
+        return embed, True
+    return result, False
 
 # A utility function to message when the user is not an admin
 async def non_admin(LOG, ctx):

@@ -114,7 +114,7 @@ async def calc_infra(ctx, start: typing.Optional[float], end: typing.Optional[fl
 
 # Add a command to calculate the cost to go from a city to another city
 @bot.command(name='pnwcity')
-async def calc_city(ctx, start: typing.Optional[int], end: typing.Optional[int], nation_id: typing.Optional[int] = None, *, args = None):
+async def calc_city(ctx, start: typing.Optional[int], end: typing.Optional[int], nation_id: typing.Optional[int] = None, *, args=None):
     embed, flag = generic_tasks(LOG, ctx, allowed_guilds, args = [start, end, nation_id, args])
     if flag:
         await ctx.send(embed=embed)
@@ -161,8 +161,10 @@ async def calc_coal(ctx, nation_id: typing.Optional[int], *, args=None):
     if flag:
         await ctx.send(embed=embed)
         return
-    # Get the coal query result
-    result = pnw.get_query("resource", nation_id)
+    result, flag = resource_tasks(nation_id)
+    if flag:
+        await ctx.send(embed=result)
+        return
     net_coal, coal_production, coal_usage = pnw.calc_coal_rev(result)
     embed=discord.Embed(title="Coal Statistics", description=f'Statistics about coal revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(coal_production): ,.2f}\nUsage: {coal_usage: ,.2f}\nNet: {net_coal: ,.2f}', color=0xFF5733)
     # Log the command usage
@@ -177,8 +179,10 @@ async def calc_coal(ctx, nation_id: typing.Optional[int], *, args=None):
     if flag:
         await ctx.send(embed=embed)
         return
-    # Get the coal query result
-    result = pnw.get_query("resource", nation_id)
+    result, flag = resource_tasks(nation_id)
+    if flag:
+        await ctx.send(embed=result)
+        return
     net_iron, iron_production, iron_usage = pnw.calc_iron_rev(result)
     embed=discord.Embed(title="Iron Statistics", description=f'Statistics about iron revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(iron_production): ,.2f}\nUsage: {iron_usage: ,.2f}\nNet: {net_iron: ,.2f}', color=0xFF5733)
     # Log the command usage
