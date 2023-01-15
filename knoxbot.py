@@ -50,7 +50,7 @@ async def on_ready():
     # Some random bs from the starter code that I will likely delete at some point
     print(f'{bot.user} is connected to the following guilds:')
     for guild in bot.guilds:
-        print(f'\n{guild.name} (id: {guild.id})')
+        print(f'{guild.name} (id: {guild.id})')
     await bot.add_cog(PoliticsandWar(bot))
     await bot.add_cog(Moderation(bot))
     await bot.add_cog(BotAdmin(bot))
@@ -79,6 +79,8 @@ async def on_command_error(ctx, error):
         return
     me = bot.get_user(admins[0])
     await me.send(f"There has been an error: {error.__class__.__name__}\n{', '.join(error.args)}\nRaised when attempted: {ctx.message.content}")
+    ERROR_LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) caused error {error.__class__.__name__} ({", ".join(error.args)}) with message {ctx.message.content}.')
+    ERROR_LOG.flush()
     return
 
 
@@ -231,12 +233,12 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
         if api_key is not None:
             result = pnw.get_query("my_info", nation_id, api_key)
             nation = result.nations[0]
-            embed=discord.Embed(title=f'Info for {nation.nation_name}',description=f'Military\nSoldiers: {nation.soldiers}\nTanks: {nation.tanks}\nAircraft: {nation.aircraft}\nShips: {nation.ships}')
+            embed=discord.Embed(title=f'Info for {nation.nation_name}',description=f'Military\nSoldiers: {nation.soldiers}\nTanks: {nation.tanks}\nAircraft: {nation.aircraft}\nShips: {nation.ships}', color=0xFF5733)
         # Otherwise, they only want to display non-sensitive information
         else:
             result = pnw.get_query("my_info", nation_id)
             nation = result.nations[0]
-            embed=discord.Embed(title=f'Info for {nation.nation_name}',description=f'Military\nSoldiers: {nation.soldiers}\nTanks: {nation.tanks}\nAircraft: {nation.aircraft}\nShips: {nation.ships}')
+            embed=discord.Embed(title=f'Info for {nation.nation_name}',description=f'Military\nSoldiers: {nation.soldiers}\nTanks: {nation.tanks}\nAircraft: {nation.aircraft}\nShips: {nation.ships}', color=0xFF5733)
         # Log the command usage
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !mypnwinfo command with id {nation_id}.\n')
         LOG.flush()
@@ -259,7 +261,9 @@ class Moderation(commands.Cog, description="Moderation commands"):
     async def ban(self, ctx, members: commands.Greedy[discord.Member] = commands.parameter(description="User(s) to ban"), *, reason: typing.Optional[str] = commands.parameter(default=None, description="Reason for banning the user(s)")):
         for member in members:
             await member.ban(reason = reason)
-        embed = discord.Embed(title="Wall of Bans", description=f"The following Discord users have joined the Wall of Bans of {ctx.guild.name} for the reason '{reason}':\n{', '.join(f'{member.name} ({member.id})' for member in members)}")
+        embed = discord.Embed(title="Wall of Bans", description=f"The following Discord users have joined the Wall of Bans of {ctx.guild.name} for the reason '{reason}':\n{', '.join(f'{member.name} ({member.id})' for member in members)}", color=0xFF5733)
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !ban command to ban {", ".join(f"{member.name} ({member.id})" for member in members)} for the reason "{reason}".\n')
+        LOG.flush()
         await ctx.send(embed=embed)
     
     async def cog_check(self, ctx):
@@ -283,6 +287,8 @@ class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins 
         with open(ENV('ERROR_LOG_DIRECTORY'),'w') as _:
             pass
         embed=discord.Embed(title="Log Clear", description=f'Admin {ctx.message.author} ({ctx.message.author.id}) has cleared the logs.', color=0xFF5733)
+        LOG.write(f'Admin {ctx.message.author} ({ctx.message.author.id}) has cleared the logs.')
+        LOG.flush()
         await ctx.send(embed=embed)
 
     # Add a command to shut the bot off
@@ -296,7 +302,7 @@ class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins 
         # Send the embed and shut the bot off
         await ctx.send(embed=embed)
         await bot.close()
-        return
+        sys.exit()
 
     # Add a command to restart the bot
     @commands.command(name="restart", help="Shuts the bot off and then brings it back online", brief="Restarts bot", usage="!restart")
@@ -321,7 +327,7 @@ class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins 
         # Check if the guild is already a permitted guild
         if check_guild(ctx.guild, allowed_guilds):
             # Log and message telling that it is
-            embed=discord.Embed(title="Already Permitted", description=f'Server {guild_id} is already an allowed server for bot commands.')
+            embed=discord.Embed(title="Already Permitted", description=f'Server {guild_id} is already an allowed server for bot commands.', color=0xFF5733)
             LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to add server {guild_id}, but that server already has permission.\n')
             LOG.flush()
             await ctx.send(embed=embed)
@@ -348,6 +354,7 @@ class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins 
                     f.write(f'{key}={value}')
                 except ValueError:
                     # syntax error
+                    f.write(line)
                     pass
             # If the key is not found, then there are no allowed guilds yet, so I need to add it to the .env
             if not found:
@@ -356,6 +363,8 @@ class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins 
         admins, allowed_guilds = start(dotenv_path)
         # Create an embed saying that the server was added successfully and send it
         embed=discord.Embed(title="Server Added", description=f"Admin {ctx.message.author} ({ctx.message.author.id}) has added the guild {guild_id} to the bot's permitted guilds.", color=0xFF5733)
+        LOG.write(f"Admin {ctx.message.author} ({ctx.message.author.id}) has added the guild {guild_id} to the bot's permitted guilds.")
+        LOG.flush()
         await ctx.send(embed=embed)
     
     @commands.command(name="work", help="Start or stop the clock of working on the bot.", usage="!work [start/stop]")
@@ -385,6 +394,7 @@ class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins 
                         f.write(f'{key}={value}')
                     except ValueError:
                         # syntax error
+                        f.write(line)
                         pass
             await me.send(f"You've 'clocked out' to working on the bot.")
             
