@@ -162,9 +162,9 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
         LOG.flush()
         await ctx.send(embed=embed)
     
-    # Add a command to calculate coal revenue (usage, production, and net revenue) of a nation
+    # Add a command to calculate lead revenue (usage, production, and net revenue) of a nation
     @commands.command(name="pnwlead", help="Calculates the lead usage, production, and net revenue for a nation.", brief="Calculates lead stats for a nation.", usage="!pnwlead nation_id")
-    async def calc_coal(self, ctx, nation_id: int = commands.parameter(description="ID of the nation to calculate for")):
+    async def calc_lead(self, ctx, nation_id: int = commands.parameter(description="ID of the nation to calculate for")):
         result, flag = resource_tasks(nation_id)
         if flag:
             await ctx.send(embed=result)
@@ -173,6 +173,20 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
         embed=discord.Embed(title="Lead Statistics", description=f'Statistics about lead revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(lead_production): ,.2f}\nUsage: {lead_usage: ,.2f}\nNet: {net_lead: ,.2f}', color=0xFF5733)
         # Log the command usage
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwlead command with id {nation_id}.\n')
+        LOG.flush()
+        await ctx.send(embed=embed)
+        
+    # Add a command to calculate bauxite revenue (usage, production, and net revenue) of a nation
+    @commands.command(name="pnwbauxite", help="Calculates the bauxite usage, production, and net revenue for a nation.", brief="Calculates bauxite stats for a nation.", usage="!pnwbauxite nation_id")
+    async def calc_bauxite(self, ctx, nation_id: int = commands.parameter(description="ID of the nation to calculate for")):
+        result, flag = resource_tasks(nation_id)
+        if flag:
+            await ctx.send(embed=result)
+            return
+        net_bauxite, bauxite_production, bauxite_usage = pnw.calc_bauxite_rev(result)
+        embed=discord.Embed(title="Bauxite Statistics", description=f'Statistics about bauxite revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(bauxite_production): ,.2f}\nUsage: {bauxite_usage: ,.2f}\nNet: {net_bauxite: ,.2f}', color=0xFF5733)
+        # Log the command usage
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwbauxite command with id {nation_id}.\n')
         LOG.flush()
         await ctx.send(embed=embed)
         

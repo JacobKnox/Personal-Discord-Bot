@@ -244,6 +244,26 @@ def calc_lead_rev(nation_call):
         mill_usage += city_mill
     return round(lead_production - mill_usage, 2), round(lead_production, 2), round(mill_usage, 2)
 
+def calc_bauxite_rev(nation_call):
+    nation = nation_call.nations[0]
+    # initialize helper variables for production and usage to 0
+    bauxite_production = 0
+    mill_usage = 0
+    if(nation.resource_production_center and "bauxite" in RESOURCES[nation.continent] and len(nation.cities) < 16):
+        bauxite_production += (1 + math.floor(min(len(nation.cities), 10) / 2)) * 12
+    # loop over each city in the nation
+    for city in nation.cities:
+        # calculate its coal production
+        city_bauxite = city.bauxite_mine * 3
+        city_bauxite *= (1 + ((city.bauxite_mine - 1) * 0.055555555555))
+        bauxite_production += city_bauxite
+        city_mill = city.aluminum_refinery * 6
+        city_mill *= (1 + ((city.aluminum_refinery - 1) * 0.125))
+        if (nation.bauxite_works):
+            city_mill *= 1.36
+        mill_usage += city_mill
+    return round(bauxite_production - mill_usage, 2), round(bauxite_production, 2), round(mill_usage, 2)
+
 def calc_oil_rev(nation_call):
     nation = nation_call.nations[0]
     # initialize helper variables for production and usage to 0
@@ -397,6 +417,8 @@ def get_query(query_type: str = "general", nation_id: int = None, api_key: str =
                 gasrefinery
                 munitions_factory
                 lead_mine
+                aluminum_refinery
+                bauxite_mine
             }
             nation_name
             continent
@@ -404,6 +426,7 @@ def get_query(query_type: str = "general", nation_id: int = None, api_key: str =
             iron_works
             arms_stockpile
             emergency_gasoline_reserve
+            bauxite_works
             """)
     elif query_type == "general":
         query = kit.query(
