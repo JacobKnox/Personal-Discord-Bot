@@ -37,3 +37,9 @@ Calculates the iron production, usage, and net revenue for a nation
 ### !pnwoil \[nation_id\]
 Calculates the oil production, usage, and net revenue for a nation
 - nation_id: The nation whose oil information is to be calculated
+### !pnwlead \[nation_id\]
+Calculates the lead production, usage, and net revenue for a nation
+- nation_id: The nation whose lead information is to be calculated
+### !pnwbauxite \[nation_id\]
+Calculates the bauxite production, usage, and net revenue for a nation
+- nation_id: The nation whose bauxite information is to be calculated
