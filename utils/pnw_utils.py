@@ -121,7 +121,7 @@ def calc_food_rev(api_result):
 
 # function for calculating the cost of bringing a nation from their current city count to a goal
 # completely accurate
-def calc_city_cost(start_city, goal_city, nation_call = None):
+def calc_city_cost(start_city: int, goal_city: int, nation_call = None):
     # intialize a temporary total cost to 0
     total_cost = 0
     # intialize a temporary cost to 0
@@ -151,12 +151,12 @@ def calc_city_cost(start_city, goal_city, nation_call = None):
         # add the cost of the next city to the total cost
         total_cost += city_cost
     # finally, return the total city cost
-    return total_cost if total_cost > 0 else 0
+    return round(total_cost, 2) if total_cost > 0 else 0
 
 
 # function to calculate the cost of buying infra from a current amount to a goal amount
 # accurate within a few tens or ones for multiples of 100, but within a few thousands for non-multiples of 100
-def calc_infra_cost(current_infra, goal_infra, nation_call = None):
+def calc_infra_cost(current_infra: float, goal_infra: float, nation_call = None):
     infra_cost = calculate_infrastructure_value(current_infra, goal_infra)
     if nation_call is not None:
         nation = nation_call.nations[0]
@@ -202,7 +202,7 @@ def calc_coal_rev(nation_call):
                 elif (temp_infra > 0):
                     power_usage += (math.ceil(temp_infra) / 100) * 1.2
                     temp_infra = 0
-    return round(coal_production - mill_usage - power_usage, 2), coal_production, (mill_usage + power_usage)
+    return round(coal_production - mill_usage - power_usage, 2), round(coal_production, 2), round(mill_usage + power_usage, 2)
 
 def calc_iron_rev(nation_call):
     nation = nation_call.nations[0]
@@ -222,7 +222,27 @@ def calc_iron_rev(nation_call):
         if (nation.iron_works):
             city_mill *= 1.36
         mill_usage += city_mill
-    return round(iron_production - mill_usage, 2), iron_production, (mill_usage)
+    return round(iron_production - mill_usage, 2), round(iron_production, 2), round(mill_usage, 2)
+
+def calc_lead_rev(nation_call):
+    nation = nation_call.nations[0]
+    # initialize helper variables for production and usage to 0
+    lead_production = 0
+    mill_usage = 0
+    if(nation.resource_production_center and "lead" in RESOURCES[nation.continent] and len(nation.cities) < 16):
+        lead_production += (1 + math.floor(min(len(nation.cities), 10) / 2)) * 12
+    # loop over each city in the nation
+    for city in nation.cities:
+        # calculate its coal production
+        city_lead = city.lead_mine * 3
+        city_lead *= (1 + ((city.lead_mine - 1) * 0.055555555555))
+        lead_production += city_lead
+        city_mill = city.munitions_factory * 6
+        city_mill *= (1 + ((city.munitions_factory - 1) * 0.125))
+        if (nation.arms_stockpile):
+            city_mill *= 1.36
+        mill_usage += city_mill
+    return round(lead_production - mill_usage, 2), round(lead_production, 2), round(mill_usage, 2)
 
 def calc_oil_rev(nation_call):
     nation = nation_call.nations[0]
@@ -252,7 +272,7 @@ def calc_oil_rev(nation_call):
                 elif (temp_infra > 0):
                     power_usage += (math.ceil(temp_infra) / 100) * 1.2
                     temp_infra = 0
-    return round(oil_production - mill_usage - power_usage, 2), oil_production, (mill_usage + power_usage)
+    return round(oil_production - mill_usage - power_usage, 2), round(oil_production, 2), round(mill_usage + power_usage, 2)
 
 
 ### The following code is taken directly from the open source Rift project ###
@@ -288,11 +308,11 @@ def calculate_infrastructure_value(start: float, end: float, /) -> float:
 
 ### End of code from Rift ###
 
-def get_query(query_type = "general", nation_id = None, api_key = API_KEY):
+def get_query(query_type: str = "general", nation_id: int = None, api_key: str = API_KEY):
     if query_type == "food":
         query = kit.query(
             "nations", {
-                "id": int(nation_id),
+                "id": nation_id,
                 "first": 1,
             },
             """
@@ -317,7 +337,7 @@ def get_query(query_type = "general", nation_id = None, api_key = API_KEY):
     elif query_type == "city":
         query = kit.query(
             "nations", {
-                "id": int(nation_id),
+                "id": nation_id,
                 "first": 1
             },
             """
@@ -333,7 +353,7 @@ def get_query(query_type = "general", nation_id = None, api_key = API_KEY):
     elif query_type == "infra":
         query = kit.query(
                 "nations", {
-                    "id": int(nation_id),
+                    "id": nation_id,
                     "first": 1
                 },
                 """
@@ -361,7 +381,7 @@ def get_query(query_type = "general", nation_id = None, api_key = API_KEY):
     elif query_type == "resource":
         query = kit.query(
             "nations", {
-                "id": int(nation_id),
+                "id": nation_id,
                 "first": 1,
             },
             """
@@ -375,11 +395,14 @@ def get_query(query_type = "general", nation_id = None, api_key = API_KEY):
                 oil_well
                 oil_power
                 gasrefinery
+                munitions_factory
+                lead_mine
             }
             nation_name
             continent
             resource_production_center
             iron_works
+            arms_stockpile
             emergency_gasoline_reserve
             """)
     elif query_type == "general":

@@ -78,7 +78,7 @@ async def on_command_error(ctx, error):
         ERROR_LOG.flush()
         return
     me = bot.get_user(admins[0])
-    await me.send(f"There has been an error: {error.__class__.__name__}\n{', '.join(error.args)}")
+    await me.send(f"There has been an error: {error.__class__.__name__}\n{', '.join(error.args)}\nRaised when attempted: {ctx.message.content}")
     return
 
 
@@ -116,7 +116,7 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
 
     # Add a command to calculate the cost to go from a city to another city
     @commands.command(name='pnwcity', help="Calculates the cost to go from one city to another, optionally for a specific nation.", brief="Calculates the cost of cities.", usage="!pnwcity start end (nation_id)")
-    async def calc_city(self, ctx, start: float = commands.parameter(description="Starting city level"), end: float = commands.parameter(description="Ending city level"), nation_id: typing.Optional[int] = commands.parameter(default=None, description="ID of the nation to calculate for")):
+    async def calc_city(self, ctx, start: int = commands.parameter(description="Starting city level"), end: int = commands.parameter(description="Ending city level"), nation_id: typing.Optional[int] = commands.parameter(default=None, description="ID of the nation to calculate for")):
         if nation_id is None:
             city_cost = pnw.calc_city_cost(start, end)
             embed=discord.Embed(title="Calculate City Cost", description=f'The cost to go from {start} to {end} is:\n${city_cost: ,.2f}', color=0xFF5733)
@@ -159,6 +159,20 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
         embed=discord.Embed(title="Coal Statistics", description=f'Statistics about coal revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(coal_production): ,.2f}\nUsage: {coal_usage: ,.2f}\nNet: {net_coal: ,.2f}', color=0xFF5733)
         # Log the command usage
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwcoal command with id {nation_id}.\n')
+        LOG.flush()
+        await ctx.send(embed=embed)
+    
+    # Add a command to calculate coal revenue (usage, production, and net revenue) of a nation
+    @commands.command(name="pnwlead", help="Calculates the lead usage, production, and net revenue for a nation.", brief="Calculates lead stats for a nation.", usage="!pnwlead nation_id")
+    async def calc_coal(self, ctx, nation_id: int = commands.parameter(description="ID of the nation to calculate for")):
+        result, flag = resource_tasks(nation_id)
+        if flag:
+            await ctx.send(embed=result)
+            return
+        net_lead, lead_production, lead_usage = pnw.calc_lead_rev(result)
+        embed=discord.Embed(title="Lead Statistics", description=f'Statistics about lead revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(lead_production): ,.2f}\nUsage: {lead_usage: ,.2f}\nNet: {net_lead: ,.2f}', color=0xFF5733)
+        # Log the command usage
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwlead command with id {nation_id}.\n')
         LOG.flush()
         await ctx.send(embed=embed)
         
