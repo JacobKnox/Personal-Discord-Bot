@@ -1,3 +1,4 @@
+import time
 import os
 import sys
 import typing
@@ -22,6 +23,7 @@ GUILD = ENV('DISCORD_GUILD')
 LOG = open(ENV('LOG_DIRECTORY'), "a")
 ERROR_LOG = open(ENV('ERROR_LOG_DIRECTORY'), "a")
 admins, allowed_guilds = start(dotenv_path)
+start_time = 0
 
 #Initialize the bot with a set prefix of ! and all possible Intents
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
@@ -281,7 +283,6 @@ class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins 
         # Re-execute this file to restart the bot
         os.execv(sys.executable, ['python'] + sys.argv)
         
-
     # Add a command to add a server to the permitted list of servers
     @commands.command(name="addserver", help="Add a server to the list of servers the bot can be used in", brief="Add a permitted server", usage="!addserver (guild_id)")
     async def add_server(self, ctx, guild_id: typing.Optional[int] = commands.parameter(default=None, description="The ID of the guild to add")):
@@ -328,6 +329,37 @@ class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins 
         # Create an embed saying that the server was added successfully and send it
         embed=discord.Embed(title="Server Added", description=f"Admin {ctx.message.author} ({ctx.message.author.id}) has added the guild {guild_id} to the bot's permitted guilds.", color=0xFF5733)
         await ctx.send(embed=embed)
+    
+    @commands.command(name="work", help="Start or stop the clock of working on the bot.", usage="!work [start/stop]")
+    async def work(self, ctx, clock: str = commands.parameter(description="Whether or not to start or stop working")):
+        global start_time
+        me = bot.get_user(admins[0])
+        if clock == "start":
+            start_time = int(time.time())
+            await me.send(f"You've 'clocked in' to working on the bot.")
+        elif clock == "stop":
+            end_time = int(time.time())
+            # Open the .env and read all the lines
+            with open(dotenv_path, "r") as f:
+                lines = f.readlines()
+            # Open the .env again in write mode
+            with open(dotenv_path, "w") as f:
+                # Loop through the lines read in
+                for line in lines:
+                    try:
+                        # Split the key and values on =
+                        key, value = line.split('=')
+                        # Check if the key is ALLOWED_GUILDS
+                        if key == "SECONDS_WORKED":
+                            # If it is, then append the guild_id to the current value
+                            value = f'{int(value) + (end_time - start_time)}'
+                        # Write the key and value to the .env again
+                        f.write(f'{key}={value}')
+                    except ValueError:
+                        # syntax error
+                        pass
+            await me.send(f"You've 'clocked out' to working on the bot.")
+            
 
     async def cog_check(self, ctx):
         if ctx.message.author.id in admins:
