@@ -63,8 +63,6 @@ def calc_food_rev(api_result):
         food_usage += nation.soldiers / 750
     # initialize the food_production variable to 0
     food_production = 0
-    if(nation.resource_production_center and len(nation.cities) < 16):
-        food_production += (1 + math.floor(min(len(nation.cities), 10) / 2)) * 12
     # iterate over all cities in the nation
     for city in nation.cities:
         # initialize the city_production variable for that city to 0
@@ -181,7 +179,7 @@ def calc_coal_rev(nation_call):
     mill_usage = 0
     power_usage = 0
     if(nation.resource_production_center and "coal" in RESOURCES[nation.continent] and len(nation.cities) < 16):
-        coal_production += (1 + math.floor(min(len(nation.cities), 10) / 2)) * 12
+        coal_production += (math.ceil(min(len(nation.cities), 10) / 2)) * 12
     # loop over each city in the nation
     for city in nation.cities:
         # calculate its coal production
@@ -210,7 +208,7 @@ def calc_iron_rev(nation_call):
     iron_production = 0
     mill_usage = 0
     if(nation.resource_production_center and "iron" in RESOURCES[nation.continent] and len(nation.cities) < 16):
-        iron_production += (1 + math.floor(min(len(nation.cities), 10) / 2)) * 12
+        iron_production += (math.ceil(min(len(nation.cities), 10) / 2)) * 12
     # loop over each city in the nation
     for city in nation.cities:
         # calculate its coal production
@@ -230,7 +228,7 @@ def calc_lead_rev(nation_call):
     lead_production = 0
     mill_usage = 0
     if(nation.resource_production_center and "lead" in RESOURCES[nation.continent] and len(nation.cities) < 16):
-        lead_production += (1 + math.floor(min(len(nation.cities), 10) / 2)) * 12
+        lead_production += (math.ceil(min(len(nation.cities), 10) / 2)) * 12
     # loop over each city in the nation
     for city in nation.cities:
         # calculate its coal production
@@ -250,7 +248,7 @@ def calc_bauxite_rev(nation_call):
     bauxite_production = 0
     mill_usage = 0
     if(nation.resource_production_center and "bauxite" in RESOURCES[nation.continent] and len(nation.cities) < 16):
-        bauxite_production += (1 + math.floor(min(len(nation.cities), 10) / 2)) * 12
+        bauxite_production += (math.ceil(min(len(nation.cities), 10) / 2)) * 12
     # loop over each city in the nation
     for city in nation.cities:
         # calculate its coal production
@@ -271,7 +269,7 @@ def calc_oil_rev(nation_call):
     mill_usage = 0
     power_usage = 0
     if(nation.resource_production_center and "oil" in RESOURCES[nation.continent] and len(nation.cities) < 16):
-        oil_production += (1 + math.floor(min(len(nation.cities), 10) / 2)) * 12
+        oil_production += (math.ceil(min(len(nation.cities), 10) / 2)) * 12
     # loop over each city in the nation
     for city in nation.cities:
         # calculate its oil production
