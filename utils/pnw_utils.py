@@ -53,15 +53,10 @@ def calc_food_rev(api_result):
     food_usage = nation.population / 1000
     # merge the wars lists into one list
     wars = nation.defensive_wars + nation.offensive_wars
-    flag = False
-    # loop over the wars and check if any of them have turns left (it's currently going)
-    for war in wars:
-        if war.turns_left > 0:
-            # add the usage from soldiers in wartime
-            food_usage += nation.soldiers / 500
-            flag = True
-            break
-    if(not flag):
+    if(sum([war.turns_left > 0 for war in wars]) > 0):
+        # add the usage from soldiers in wartime
+        food_usage += nation.soldiers / 500
+    else:
         # add the usage from soldiers in peacetime
         food_usage += nation.soldiers / 750
     # initialize the food_production variable to 0
@@ -102,13 +97,9 @@ def calc_food_rev(api_result):
         # Antarctica is unaffected by season, but gets a permanent -50% food production
         season_affect = 0.5
     # calculate the radiation factor on food production
-    radiationFactor = 1 - ((continent_radiation + radiation_result.game_info.radiation.global_) / 1000)
-    if(nation.fallout_shelter and radiationFactor < 0.1):
-        radiationFactor = 0.1
-    # apply the seasonal factor to the total production
-    food_production *= season_affect
-    # apply the radiation factor to the total production
-    food_production *= radiationFactor
+    radiation_factor = max(1 - ((continent_radiation + radiation_result.game_info.radiation.global_) / 1000), nation.fallout_shelter * 0.1)
+    # apply the seasonal and radiation factors to the total production
+    food_production *= season_affect * radiation_factor
     # return the difference between the food_production and food_usage to determine net food revenue
     return my_round(food_production - food_usage), my_round(food_production), my_round(food_usage)
 
