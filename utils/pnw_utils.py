@@ -6,9 +6,9 @@ from os import getenv as ENV
 # Other import modules
 import pnwkit # PnW's Python API kit
 import math # Python's math library
-from utils.utils import *
-
-from exceptions import *
+# My imports
+from utils.utils import * # general utility functions
+from exceptions import * # custom exceptions
 
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
@@ -34,7 +34,7 @@ kit = pnwkit.QueryKit(API_KEY)
 
 # function for calculating the daily food revenue of a nation
 # production accurate within a few ones or tens, usage accurate within a few thousands?
-def calc_food_rev(api_result):
+def calc_food_rev(api_result: pnwkit.Result) -> tuple[float, float, float]:
     nation = api_result.nations[0]
     # querying radiation information from GameInfo
     radiation_result = get_query("radiation")
@@ -106,14 +106,14 @@ def calc_food_rev(api_result):
 
 # function for calculating the cost of bringing a nation from their current city count to a goal
 # completely accurate
-def calc_city_cost(start_city: int, goal_city: int, nation_call = None):
+def calc_city_cost(start_city: int, goal_city: int, nation_call: pnwkit.Result = None) -> float:
     # intialize a temporary total cost to 0
     total_cost = 0
     # intialize a temporary cost to 0
     city_cost = 0
     for city_num in range(start_city, goal_city):
         # calculate the cost of the next city
-        city_cost = (50000 * pow((city_num - 1), 3) + 150000 * city_num + 75000)
+        city_cost = (50000 * ((city_num - 1) ** 3) + 150000 * city_num + 75000)
         # if the user has specified a nation
         if nation_call is not None:
             # if the nation has Urban Planning project, apply it
@@ -136,12 +136,12 @@ def calc_city_cost(start_city: int, goal_city: int, nation_call = None):
         # add the cost of the next city to the total cost
         total_cost += city_cost
     # finally, return the total city cost
-    return round(total_cost, 2) if total_cost > 0 else 0
+    return my_round(total_cost) if total_cost > 0 else 0
 
 
 # function to calculate the cost of buying infra from a current amount to a goal amount
 # accurate within a few tens or ones for multiples of 100, but within a few thousands for non-multiples of 100
-def calc_infra_cost(current_infra: float, goal_infra: float, nation_call = None):
+def calc_infra_cost(current_infra: float, goal_infra: float, nation_call: pnwkit.Result = None) -> float:
     infra_cost = calculate_infrastructure_value(current_infra, goal_infra)
     if nation_call is not None:
         nation = nation_call.nations[0]
@@ -156,9 +156,9 @@ def calc_infra_cost(current_infra: float, goal_infra: float, nation_call = None)
             elif (nation.domestic_policy == pnwkit.data.DomesticPolicy(5)):
                 modifier -= 0.05
             infra_cost *= modifier
-    return round(infra_cost, 2)
+    return my_round(infra_cost)
 
-def calc_raw_rev(nation_call, resource):
+def calc_raw_rev(nation_call: pnwkit.Result, resource: str) -> tuple[float, float, float]:
     nation = nation_call.nations[0]
     # initialize helper variables for production and usage to 0
     production = 0
@@ -222,7 +222,7 @@ def calc_raw_rev(nation_call, resource):
                     temp_infra = 0
     return my_round(production - mill_usage - power_usage), my_round(production), my_round(mill_usage + power_usage)
 
-def calc_manu_rev(nation_call, resource):
+def calc_manu_rev(nation_call: pnwkit.Result, resource: str) -> float:
     nation = nation_call.nations[0]
     production = 0
     nation_info = {
@@ -282,7 +282,7 @@ def calculate_infrastructure_value(start: float, end: float, /) -> float:
 
 ### End of code from Rift ###
 
-def get_query(query_type: str = "general", nation_id: int = None, api_key: str = API_KEY):
+def get_query(query_type: str = "general", nation_id: int = None, api_key: str = API_KEY) -> pnwkit.Result:
     if query_type == "food":
         query = kit.query(
             "nations", {

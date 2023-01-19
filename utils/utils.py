@@ -1,15 +1,18 @@
+from io import TextIOWrapper
 import discord
+import pnwkit
 import utils.pnw_utils as pnw
 import math
+from discord.ext import commands
 
 # A utility function to check whether or not a guild is a currently permitted guild
-def check_guild(guild, allowed_guilds):
+def check_guild(guild: discord.Guild, allowed_guilds: list[int]) -> bool:
     if guild.id in allowed_guilds:
         return True
     else:
         return False
 
-async def generic_tasks(LOG, ctx, allowed_guilds):
+async def generic_tasks(LOG: TextIOWrapper, ctx: commands.Context, allowed_guilds: list[int]) -> bool:
     if(not check_guild(ctx.guild, allowed_guilds)):
         # Write to the log that they attempted to use the command in the guild
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use the !{ctx.command} command in guild {ctx.guild.id}.\n')
@@ -20,17 +23,18 @@ async def generic_tasks(LOG, ctx, allowed_guilds):
         return False
     return True
 
-def resource_tasks(nation_id):
+async def resource_tasks(nation_id: int, ctx: commands.Context) -> tuple[pnwkit.Result, bool]:
     # Get the resource query result
     try:
         result = pnw.get_query("resource", nation_id)
     except Exception as inst:
         embed=discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
-        return embed, True
+        await ctx.send(embed=embed)
+        return None, True
     return result, False
 
 # A utility function to initialize (or re-define) certain variables
-def start(dotenv_path):
+def start(dotenv_path: str) -> tuple[list[int], list[int]]:
     # Initialize the variables to None in case they don't exist in the env file
     admins = []
     allowed_guilds = []
@@ -48,9 +52,9 @@ def start(dotenv_path):
     return admins, allowed_guilds
 
 # Inspired by code from https://www.reddit.com/r/learnpython/comments/92ne2s/why_does_round05_0/
-def my_round(num, places = 2):
-    temp = num * pow(10, places)
+def my_round(num: float, places: int = 2) -> float:
+    temp = num * (10 ** places)
     frac = temp - math.floor(temp)
     if frac < 0.5:
-        return math.floor(temp) / pow(10, places)
-    return math.ceil(temp) / pow(10, places)
+        return math.floor(temp) / (10 ** places)
+    return math.ceil(temp) / (10 ** places)
