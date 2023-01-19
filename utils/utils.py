@@ -47,6 +47,7 @@ def start(dotenv_path):
                 allowed_guilds = [int(id) for id in value.split(",")]
     return admins, allowed_guilds
 
+# This code temporarily taken from https://www.reddit.com/r/learnpython/comments/92ne2s/why_does_round05_0/ until I make a rounding utility function that better suits my needs here
 def col_round(x):
   frac = x - math.floor(x)
   if frac < 0.5: return math.floor(x)
