@@ -79,7 +79,7 @@ async def on_command_error(ctx, error):
         return
     me = bot.get_user(admins[0])
     await me.send(f"There has been an error: {error.__class__.__name__}\n{', '.join(error.args)}\nRaised when attempted: {ctx.message.content}")
-    ERROR_LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) caused error {error.__class__.__name__} ({", ".join(error.args)}) with message {ctx.message.content}.')
+    ERROR_LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) caused error {error.__class__.__name__} ({", ".join(error.args)}) with message {ctx.message.content}.\n')
     ERROR_LOG.flush()
     return
 
@@ -149,74 +149,18 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwfood command with id {nation_id}.\n')
         LOG.flush()
         await ctx.send(embed=embed)
-
+        
     # Add a command to calculate coal revenue (usage, production, and net revenue) of a nation
-    @commands.command(name="pnwcoal", help="Calculates the coal usage, production, and net revenue for a nation.", brief="Calculates coal stats for a nation.", usage="!pnwcoal nation_id")
-    async def calc_coal(self, ctx, nation_id: int = commands.parameter(description="ID of the nation to calculate for")):
+    @commands.command(name="pnwraw", help="Calculates the raw's usage, production, and net revenue for a nation.", brief="Calculates raw stats for a nation.", usage="!pnwraw nation_id resource")
+    async def calc_raw(self, ctx, nation_id: int = commands.parameter(description="ID of the nation to calculate for"), resource: str = commands.parameter(description="Raw resource to calculate the revenue for")):
         result, flag = resource_tasks(nation_id)
         if flag:
             await ctx.send(embed=result)
             return
-        net_coal, coal_production, coal_usage = pnw.calc_coal_rev(result)
-        embed=discord.Embed(title="Coal Statistics", description=f'Statistics about coal revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(coal_production): ,.2f}\nUsage: {coal_usage: ,.2f}\nNet: {net_coal: ,.2f}', color=0xFF5733)
+        net, production, usage = pnw.calc_rev(result, resource)
+        embed=discord.Embed(title=f"{resource.capitalize()} Statistics", description=f'Statistics about {resource} revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(production): ,.2f}\nUsage: {usage: ,.2f}\nNet: {net: ,.2f}', color=0xFF5733)
         # Log the command usage
-        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwcoal command with id {nation_id}.\n')
-        LOG.flush()
-        await ctx.send(embed=embed)
-    
-    # Add a command to calculate lead revenue (usage, production, and net revenue) of a nation
-    @commands.command(name="pnwlead", help="Calculates the lead usage, production, and net revenue for a nation.", brief="Calculates lead stats for a nation.", usage="!pnwlead nation_id")
-    async def calc_lead(self, ctx, nation_id: int = commands.parameter(description="ID of the nation to calculate for")):
-        result, flag = resource_tasks(nation_id)
-        if flag:
-            await ctx.send(embed=result)
-            return
-        net_lead, lead_production, lead_usage = pnw.calc_lead_rev(result)
-        embed=discord.Embed(title="Lead Statistics", description=f'Statistics about lead revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(lead_production): ,.2f}\nUsage: {lead_usage: ,.2f}\nNet: {net_lead: ,.2f}', color=0xFF5733)
-        # Log the command usage
-        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwlead command with id {nation_id}.\n')
-        LOG.flush()
-        await ctx.send(embed=embed)
-        
-    # Add a command to calculate bauxite revenue (usage, production, and net revenue) of a nation
-    @commands.command(name="pnwbauxite", help="Calculates the bauxite usage, production, and net revenue for a nation.", brief="Calculates bauxite stats for a nation.", usage="!pnwbauxite nation_id")
-    async def calc_bauxite(self, ctx, nation_id: int = commands.parameter(description="ID of the nation to calculate for")):
-        result, flag = resource_tasks(nation_id)
-        if flag:
-            await ctx.send(embed=result)
-            return
-        net_bauxite, bauxite_production, bauxite_usage = pnw.calc_bauxite_rev(result)
-        embed=discord.Embed(title="Bauxite Statistics", description=f'Statistics about bauxite revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(bauxite_production): ,.2f}\nUsage: {bauxite_usage: ,.2f}\nNet: {net_bauxite: ,.2f}', color=0xFF5733)
-        # Log the command usage
-        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwbauxite command with id {nation_id}.\n')
-        LOG.flush()
-        await ctx.send(embed=embed)
-        
-    # Add a command to calculate oil revenue (usage, production, and net revenue) of a nation
-    @commands.command(name="pnwoil", help="Calculates the oil usage, production, and net revenue for a nation.", brief="Calculates oil stats for a nation.", usage="!pnwoil nation_id")
-    async def calc_oil(self, ctx, nation_id: int = commands.parameter(description="ID of the nation to calculate for")):
-        result, flag = resource_tasks(nation_id)
-        if flag:
-            await ctx.send(embed=result)
-            return
-        net_oil, oil_production, oil_usage = pnw.calc_oil_rev(result)
-        embed=discord.Embed(title="Oil Statistics", description=f'Statistics about oil revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(oil_production): ,.2f}\nUsage: {oil_usage: ,.2f}\nNet: {net_oil: ,.2f}', color=0xFF5733)
-        # Log the command usage
-        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwoil command with id {nation_id}.\n')
-        LOG.flush()
-        await ctx.send(embed=embed)
-        
-    # Add a command to calculate iron revenue (usage, production, and net revenue) of a nation
-    @commands.command(name="pnwiron", help="Calculates the iron usage, production, and net revenue for a nation.", brief="Calculates iron stats for a nation.", usage="!pnwiron nation_id")
-    async def calc_iron(self, ctx, nation_id: int = commands.parameter(description="ID of the nation to calculate for")):
-        result, flag = resource_tasks(nation_id)
-        if flag:
-            await ctx.send(embed=result)
-            return
-        net_iron, iron_production, iron_usage = pnw.calc_iron_rev(result)
-        embed=discord.Embed(title="Iron Statistics", description=f'Statistics about iron revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(iron_production): ,.2f}\nUsage: {iron_usage: ,.2f}\nNet: {net_iron: ,.2f}', color=0xFF5733)
-        # Log the command usage
-        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwiron command with id {nation_id}.\n')
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwraw command with id {nation_id} and resource {resource}.\n')
         LOG.flush()
         await ctx.send(embed=embed)
 

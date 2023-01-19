@@ -6,6 +6,7 @@ from os import getenv as ENV
 # Other import modules
 import pnwkit # PnW's Python API kit
 import math # Python's math library
+from utils.utils import *
 
 from exceptions import *
 
@@ -23,6 +24,8 @@ RESOURCES  = {
     "na": ["coal", "iron", "uranium"],
     "sa": ["oil", "bauxite", "lead"]
 }
+
+POWER_RSS = ["oil", "coal", "uranium"]
 
 # create a QueryKit with my API key to create queries
 kit = pnwkit.QueryKit(API_KEY)
@@ -77,7 +80,7 @@ def calc_food_rev(api_result):
         # if the nation has more than one farm
         if (city.farm > 1):
             # apply the production bonus
-            city_production *= 1 + round((city.farm - 1) * 0.0263157894737, 2)
+            city_production *= 1 + col_round((city.farm - 1) * 2.63157894737) / 100
         # add the current city's production to the nation's total production
         food_production += city_production
     # the seasonal affect on food production (need to check what continent and season the nation is on)
@@ -171,126 +174,55 @@ def calc_infra_cost(current_infra: float, goal_infra: float, nation_call = None)
             infra_cost *= modifier
     return round(infra_cost, 2)
 
-
-def calc_coal_rev(nation_call):
+def calc_rev(nation_call, resource):
     nation = nation_call.nations[0]
     # initialize helper variables for production and usage to 0
-    coal_production = 0
+    production = 0
     mill_usage = 0
     power_usage = 0
-    if(nation.resource_production_center and "coal" in RESOURCES[nation.continent] and len(nation.cities) < 16):
-        coal_production += (math.ceil(min(len(nation.cities), 10) / 2)) * 12
-    # loop over each city in the nation
-    for city in nation.cities:
-        # calculate its coal production
-        city_coal = city.coal_mine * 3
-        city_coal *= (1 + ((city.coal_mine - 1) * 0.055555555555))
-        coal_production += city_coal
-        city_mill = city.steel_mill * 3
-        city_mill *= (1 + ((city.steel_mill - 1) * 0.125))
-        if (nation.iron_works):
-            city_mill *= 1.36
-        mill_usage += city_mill
-        if (city.powered and city.coal_power > 0):
-            temp_infra = city.infrastructure
-            for _ in range(0, city.coal_power):
-                if (temp_infra >= 500):
-                    power_usage += 6
-                    temp_infra -= 500
-                elif (temp_infra > 0):
-                    power_usage += (math.ceil(temp_infra) / 100) * 1.2
-                    temp_infra = 0
-    return round(coal_production - mill_usage - power_usage, 2), round(coal_production, 2), round(mill_usage + power_usage, 2)
-
-def calc_iron_rev(nation_call):
-    nation = nation_call.nations[0]
-    # initialize helper variables for production and usage to 0
-    iron_production = 0
-    mill_usage = 0
-    if(nation.resource_production_center and "iron" in RESOURCES[nation.continent] and len(nation.cities) < 16):
-        iron_production += (math.ceil(min(len(nation.cities), 10) / 2)) * 12
-    # loop over each city in the nation
-    for city in nation.cities:
-        # calculate its coal production
-        city_iron = city.iron_mine * 3
-        city_iron *= (1 + ((city.iron_mine - 1) * 0.055555555555))
-        iron_production += city_iron
-        city_mill = city.steel_mill * 3
-        city_mill *= (1 + ((city.steel_mill - 1) * 0.125))
-        if (nation.iron_works):
-            city_mill *= 1.36
-        mill_usage += city_mill
-    return round(iron_production - mill_usage, 2), round(iron_production, 2), round(mill_usage, 2)
-
-def calc_lead_rev(nation_call):
-    nation = nation_call.nations[0]
-    # initialize helper variables for production and usage to 0
-    lead_production = 0
-    mill_usage = 0
-    if(nation.resource_production_center and "lead" in RESOURCES[nation.continent] and len(nation.cities) < 16):
-        lead_production += (math.ceil(min(len(nation.cities), 10) / 2)) * 12
-    # loop over each city in the nation
-    for city in nation.cities:
-        # calculate its coal production
-        city_lead = city.lead_mine * 3
-        city_lead *= (1 + ((city.lead_mine - 1) * 0.055555555555))
-        lead_production += city_lead
-        city_mill = city.munitions_factory * 6
-        city_mill *= (1 + ((city.munitions_factory - 1) * 0.125))
-        if (nation.arms_stockpile):
-            city_mill *= 1.36
-        mill_usage += city_mill
-    return round(lead_production - mill_usage, 2), round(lead_production, 2), round(mill_usage, 2)
-
-def calc_bauxite_rev(nation_call):
-    nation = nation_call.nations[0]
-    # initialize helper variables for production and usage to 0
-    bauxite_production = 0
-    mill_usage = 0
-    if(nation.resource_production_center and "bauxite" in RESOURCES[nation.continent] and len(nation.cities) < 16):
-        bauxite_production += (math.ceil(min(len(nation.cities), 10) / 2)) * 12
-    # loop over each city in the nation
-    for city in nation.cities:
-        # calculate its coal production
-        city_bauxite = city.bauxite_mine * 3
-        city_bauxite *= (1 + ((city.bauxite_mine - 1) * 0.055555555555))
-        bauxite_production += city_bauxite
-        city_mill = city.aluminum_refinery * 6
-        city_mill *= (1 + ((city.aluminum_refinery - 1) * 0.125))
-        if (nation.bauxite_works):
-            city_mill *= 1.36
-        mill_usage += city_mill
-    return round(bauxite_production - mill_usage, 2), round(bauxite_production, 2), round(mill_usage, 2)
-
-def calc_oil_rev(nation_call):
-    nation = nation_call.nations[0]
-    # initialize helper variables for production and usage to 0
-    oil_production = 0
-    mill_usage = 0
-    power_usage = 0
-    if(nation.resource_production_center and "oil" in RESOURCES[nation.continent] and len(nation.cities) < 16):
-        oil_production += (math.ceil(min(len(nation.cities), 10) / 2)) * 12
+    if(nation.resource_production_center and resource in RESOURCES[nation.continent] and len(nation.cities) < 16):
+        production += (math.ceil(min(len(nation.cities), 10) / 2)) * 12
     # loop over each city in the nation
     for city in nation.cities:
         # calculate its oil production
-        city_oil = city.oil_well * 3
-        city_oil *= (1 + ((city.oil_well - 1) * 0.055555555555))
-        oil_production += city_oil
-        city_mill = city.gasrefinery * 3
-        city_mill *= (1 + ((city.gasrefinery - 1) * 0.125))
-        if (nation.emergency_gasoline_reserve):
+        info = {
+            'oil': [city.oil_well, city.gasrefinery, nation.emergency_gasoline_reserve, city.oil_power],
+            'coal': [city.coal_mine, city.steel_mill, nation.iron_works, city.coal_power],
+            'iron': [city.iron_mine, city.steel_mill, nation.iron_works, 0],
+            'bauxite': [city.bauxite_mine, city.aluminum_refinery, nation.bauxite_works, 0],
+            'lead': [city.lead_mine, city.munitions_factory, nation.arms_stockpile, 0],
+            'uranium': [city.uranium_mine, 0, nation.uranium_enrichment_program, city.nuclear_power]
+        }
+        raw_improvement = info[resource][0]
+        manu_improvement = info[resource][1]
+        project = info[resource][2]
+        power = info[resource][3]
+        city_production = raw_improvement * 3
+        if(resource == 'uranium' and project):
+            city_production *= 2
+        city_production *= (1 + col_round((raw_improvement - 1) * 12.5)/100)
+        production += city_production
+        city_mill = manu_improvement * 3
+        city_mill *= (1 + ((manu_improvement - 1) * 0.125))
+        if (project):
             city_mill *= 1.36
         mill_usage += city_mill
-        if (city.powered and city.oil_power > 0):
+        if(resource == 'uranium'):
+            power_infra = 2000
+            infra_per = 1000
+        else:
+            power_infra = 500
+            infra_per = 100
+        if (resource in POWER_RSS and city.powered and power > 0):
             temp_infra = city.infrastructure
-            for _ in range(0, city.oil_power):
-                if (temp_infra >= 500):
-                    power_usage += 6
-                    temp_infra -= 500
+            for _ in range(0, power):
+                if (temp_infra >= power_infra):
+                    power_usage += (power_infra / infra_per) * 1.2
+                    temp_infra -= power_infra
                 elif (temp_infra > 0):
-                    power_usage += (math.ceil(temp_infra) / 100) * 1.2
+                    power_usage += math.ceil(temp_infra / infra_per) * 1.2
                     temp_infra = 0
-    return round(oil_production - mill_usage - power_usage, 2), round(oil_production, 2), round(mill_usage + power_usage, 2)
+    return round(production - mill_usage - power_usage, 2), round(production, 2), round(mill_usage + power_usage, 2)
 
 
 ### The following code is taken directly from the open source Rift project ###
@@ -417,6 +349,8 @@ def get_query(query_type: str = "general", nation_id: int = None, api_key: str =
                 lead_mine
                 aluminum_refinery
                 bauxite_mine
+                nuclear_power
+                uranium_mine
             }
             nation_name
             continent
@@ -425,6 +359,7 @@ def get_query(query_type: str = "general", nation_id: int = None, api_key: str =
             arms_stockpile
             emergency_gasoline_reserve
             bauxite_works
+            uranium_enrichment_program
             """)
     elif query_type == "general":
         query = kit.query(
@@ -486,7 +421,7 @@ def get_query(query_type: str = "general", nation_id: int = None, api_key: str =
                     """)
     try:
         result = query.get()
-        if len(result.nations) == 0:
+        if query_type != "radiation" and len(result.nations) == 0:
             raise NoNationFoundException("No nation exists with that nation id.")
         return result
     except NoNationFoundException as inst:

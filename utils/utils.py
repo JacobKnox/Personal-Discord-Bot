@@ -1,5 +1,6 @@
 import discord
 import utils.pnw_utils as pnw
+import math
 
 # A utility function to check whether or not a guild is a currently permitted guild
 def check_guild(guild, allowed_guilds):
@@ -45,3 +46,8 @@ def start(dotenv_path):
             if(key == "ALLOWED_GUILDS"):
                 allowed_guilds = [int(id) for id in value.split(",")]
     return admins, allowed_guilds
+
+def col_round(x):
+  frac = x - math.floor(x)
+  if frac < 0.5: return math.floor(x)
+  return math.ceil(x)
