@@ -174,38 +174,51 @@ def calc_infra_cost(current_infra: float, goal_infra: float, nation_call = None)
             infra_cost *= modifier
     return round(infra_cost, 2)
 
-def calc_rev(nation_call, resource):
+def calc_raw_rev(nation_call, resource):
     nation = nation_call.nations[0]
     # initialize helper variables for production and usage to 0
     production = 0
     mill_usage = 0
     power_usage = 0
+    nation_info = {
+        'oil': [nation.emergency_gasoline_reserve, 3, 2],
+        'coal': [nation.iron_works, 3, 1.36],
+        'iron': [nation.iron_works, 3, 1.36],
+        'bauxite': [nation.bauxite_works, 3, 1.36],
+        'lead': [nation.arms_stockpile, 6, 1.34],
+        'uranium': [nation.uranium_enrichment_program, 0, 0]
+    }
+    project = nation_info[resource][0]
+    manu_used = nation_info[resource][1]
+    project_mod = nation_info[resource][2]
     if(nation.resource_production_center and resource in RESOURCES[nation.continent] and len(nation.cities) < 16):
         production += (math.ceil(min(len(nation.cities), 10) / 2)) * 12
     # loop over each city in the nation
     for city in nation.cities:
         # calculate its oil production
         info = {
-            'oil': [city.oil_well, city.gasrefinery, nation.emergency_gasoline_reserve, city.oil_power],
-            'coal': [city.coal_mine, city.steel_mill, nation.iron_works, city.coal_power],
-            'iron': [city.iron_mine, city.steel_mill, nation.iron_works, 0],
-            'bauxite': [city.bauxite_mine, city.aluminum_refinery, nation.bauxite_works, 0],
-            'lead': [city.lead_mine, city.munitions_factory, nation.arms_stockpile, 0],
-            'uranium': [city.uranium_mine, 0, nation.uranium_enrichment_program, city.nuclear_power]
+            'oil': [city.oil_well, city.gasrefinery, city.oil_power],
+            'coal': [city.coal_mine, city.steel_mill, city.coal_power],
+            'iron': [city.iron_mine, city.steel_mill, 0],
+            'bauxite': [city.bauxite_mine, city.aluminum_refinery, 0],
+            'lead': [city.lead_mine, city.munitions_factory, 0],
+            'uranium': [city.uranium_mine, 0, city.nuclear_power]
         }
+        # number of the improvement (mine/well) in the city
         raw_improvement = info[resource][0]
+        # number of the improvement (mill/refinery/factory) in the city
         manu_improvement = info[resource][1]
-        project = info[resource][2]
-        power = info[resource][3]
+        # number of power plants in the city
+        power = info[resource][2]
         city_production = raw_improvement * 3
         if(resource == 'uranium' and project):
             city_production *= 2
         city_production *= (1 + col_round((raw_improvement - 1) * 12.5)/100)
         production += city_production
-        city_mill = manu_improvement * 3
-        city_mill *= (1 + ((manu_improvement - 1) * 0.125))
+        city_mill = manu_improvement * manu_used
+        city_mill *= (1 + col_round((manu_improvement - 1) * 12.5)/100)
         if (project):
-            city_mill *= 1.36
+            city_mill *= project_mod
         mill_usage += city_mill
         if(resource == 'uranium'):
             power_infra = 2000
@@ -223,6 +236,33 @@ def calc_rev(nation_call, resource):
                     power_usage += math.ceil(temp_infra / infra_per) * 1.2
                     temp_infra = 0
     return round(production - mill_usage - power_usage, 2), round(production, 2), round(mill_usage + power_usage, 2)
+
+def calc_manu_rev(nation_call, resource):
+    nation = nation_call.nations[0]
+    production = 0
+    nation_info = {
+        'steel': [nation.iron_works, 9, 1.36],
+        'aluminum': [nation.bauxite_works, 9, 1.36],
+        'gasoline': [nation.emergency_gasoline_reserve, 6, 2, 1.34],
+        'munitions': [nation.arms_stockpile, 18]
+    }
+    project = nation_info[resource][0]
+    generated = nation_info[resource][1]
+    project_mod = nation_info[resource][2]
+    for city in nation.cities:
+        city_info = {
+            'steel': city.steel_mill,
+            'aluminum': city.aluminum_refinery,
+            'gasoline': city.gasrefinery,
+            'munitions': city.munitions_factory
+        }
+        if city.powered:
+            improvement = city_info[resource]
+            city_production = improvement * generated * (1 + col_round((improvement - 1) * 12.5)/100)
+            if project:
+                city_production *= project_mod
+            production += city_production
+    return production
 
 
 ### The following code is taken directly from the open source Rift project ###

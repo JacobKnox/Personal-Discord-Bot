@@ -24,6 +24,7 @@ GUILD = ENV('DISCORD_GUILD')
 LOG = open(ENV('LOG_DIRECTORY'), "a")
 ERROR_LOG = open(ENV('ERROR_LOG_DIRECTORY'), "a")
 admins, allowed_guilds = start(dotenv_path)
+start_time = 0
 
 #Initialize the bot with a set prefix of ! and all possible Intents
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
@@ -170,10 +171,27 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
             await ctx.send(embed=result)
             return
         # Call the calculation function
-        net, production, usage = pnw.calc_rev(result, resource)
+        net, production, usage = pnw.calc_raw_rev(result, resource)
         embed=discord.Embed(title=f"{resource.capitalize()} Statistics", description=f'Statistics about {resource} revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(production): ,.2f}\nUsage: {usage: ,.2f}\nNet: {net: ,.2f}', color=0xFF5733)
         # Log the command usage and send the generated embed
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwraw command with id {nation_id} and resource {resource}.\n')
+        LOG.flush()
+        await ctx.send(embed=embed)
+        
+    # Add a command to calculate revenue (usage, production, and net revenue) for any manufactured resource of a nation
+    @commands.command(name="pnwmanu", help="Calculates the manufactured's usage, production, and net revenue for a nation.", brief="Calculates manufactured stats for a nation.", usage="!pnwmanu nation_id resource")
+    async def calc_manu(self, ctx, nation_id: int = commands.parameter(description="ID of the nation to calculate for"), resource: str = commands.parameter(description="Manufactured resource to calculate the revenue for")):
+        # Do anything we need to related to resources
+        # May get rid of utility function unless I need it for manufactured command and others
+        result, flag = resource_tasks(nation_id)
+        if flag:
+            await ctx.send(embed=result)
+            return
+        # Call the calculation function
+        production = pnw.calc_manu_rev(result, resource)
+        embed=discord.Embed(title=f"{resource.capitalize()} Statistics", description=f'Statistics about {resource} revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {production: ,.2f}\nUsage: {0: ,.2f}\nNet: {production: ,.2f}', color=0xFF5733)
+        # Log the command usage and send the generated embed
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwmanu command with id {nation_id} and resource {resource}.\n')
         LOG.flush()
         await ctx.send(embed=embed)
 
