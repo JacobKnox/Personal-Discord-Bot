@@ -188,6 +188,8 @@ def calc_raw_rev(nation_call, resource):
         'lead': [nation.arms_stockpile, 6, 1.34],
         'uranium': [nation.uranium_enrichment_program, 0, 0]
     }
+    if(resource not in nation_info.keys()):
+        raise InvalidResourceException(resource)
     project = nation_info[resource][0]
     manu_used = nation_info[resource][1]
     project_mod = nation_info[resource][2]
@@ -246,6 +248,8 @@ def calc_manu_rev(nation_call, resource):
         'gasoline': [nation.emergency_gasoline_reserve, 6, 2, 1.34],
         'munitions': [nation.arms_stockpile, 18]
     }
+    if(resource not in nation_info.keys()):
+        raise InvalidResourceException(resource)
     project = nation_info[resource][0]
     generated = nation_info[resource][1]
     project_mod = nation_info[resource][2]

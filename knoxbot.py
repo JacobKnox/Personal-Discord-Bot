@@ -14,6 +14,7 @@ from discord.ext import commands
 # Importing my utility files
 import utils.pnw_utils as pnw
 from utils.utils import *
+from exceptions import *
 
 # Load the env from its path
 dotenv_path = join(dirname(__file__), '.env')
@@ -171,7 +172,12 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
             await ctx.send(embed=result)
             return
         # Call the calculation function
-        net, production, usage = pnw.calc_raw_rev(result, resource)
+        try:
+            net, production, usage = pnw.calc_raw_rev(result, resource.lower())
+        except InvalidResourceException as inst:
+            embed=discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
+            await ctx.send(embed=embed)
+            return
         embed=discord.Embed(title=f"{resource.capitalize()} Statistics", description=f'Statistics about {resource} revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(production): ,.2f}\nUsage: {usage: ,.2f}\nNet: {net: ,.2f}', color=0xFF5733)
         # Log the command usage and send the generated embed
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwraw command with id {nation_id} and resource {resource}.\n')
@@ -188,7 +194,12 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
             await ctx.send(embed=result)
             return
         # Call the calculation function
-        production = pnw.calc_manu_rev(result, resource)
+        try:
+            production = pnw.calc_manu_rev(result, resource.lower())
+        except InvalidResourceException as inst:
+            embed=discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
+            await ctx.send(embed=embed)
+            return
         embed=discord.Embed(title=f"{resource.capitalize()} Statistics", description=f'Statistics about {resource} revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {production: ,.2f}\nUsage: {0: ,.2f}\nNet: {production: ,.2f}', color=0xFF5733)
         # Log the command usage and send the generated embed
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwmanu command with id {nation_id} and resource {resource}.\n')

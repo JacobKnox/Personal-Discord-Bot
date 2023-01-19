@@ -5,7 +5,13 @@ class GeneralException(Exception):
     self.message = ', '.join(exception.args)
 
 class NoNationFoundException(Exception):
-  def __init__(self, message):
+  def __init__(self, id):
     super().__init__()
     self.name = "NoNationFoundException"
-    self.message = message
+    self.message = f"No nation exists with nation {id}."
+    
+class InvalidResourceException(Exception):
+  def __init__(self, resource):
+    super().__init__()
+    self.name = "InvalidResourceException"
+    self.message = f"{resource.capitalize()} is not a valid resource."
