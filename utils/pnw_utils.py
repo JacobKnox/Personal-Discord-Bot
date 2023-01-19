@@ -24,7 +24,6 @@ RESOURCES  = {
     "na": ["coal", "iron", "uranium"],
     "sa": ["oil", "bauxite", "lead"]
 }
-
 POWER_RSS = ["oil", "coal", "uranium"]
 
 # create a QueryKit with my API key to create queries
@@ -48,6 +47,7 @@ def calc_food_rev(api_result):
         "na": radiation_result.game_info.radiation.north_america,
         "sa": radiation_result.game_info.radiation.south_america
     }
+    month = radiation_result.game_info.game_date.month
     
     # intialize the food_usage variable with the usage from population
     food_usage = nation.population / 1000
@@ -70,17 +70,10 @@ def calc_food_rev(api_result):
     for city in nation.cities:
         # initialize the city_production variable for that city to 0
         city_production = 0
-        # if the nation has the Mass Irrigation national project
-        if (nation.massirr):
-            # set the production to the number of farms multiplied by the land divided by 400 (effect of Mass Irrigation)
-            city_production = city.farm * 12 * (city.land / 400)
-        else:
-            # set the production to the number of farms multiplied by the land divided by 500 (default production)
-            city_production = city.farm * 12 * (city.land / 500)
-        # if the nation has more than one farm
-        if (city.farm > 1):
-            # apply the production bonus
-            city_production *= 1 + col_round((city.farm - 1) * 2.63157894737) / 100
+        # set the production to the number of farms multiplied by the land divided by 500 (default production) minus 100 if they have Mass Irrigation
+        city_production = city.farm * 12 * (city.land / (500 - 100 * nation.massirr))
+        # apply the production bonus
+        city_production *= 1 + max(my_round((city.farm - 1) * 0.0263157894737), 0)
         # add the current city's production to the nation's total production
         food_production += city_production
     # the seasonal affect on food production (need to check what continent and season the nation is on)
@@ -91,18 +84,18 @@ def calc_food_rev(api_result):
     # if they're on North America, Europe, or Asia
     if (continent in ["na", "eu", "as"]):
         # summer
-        if (radiation_result.game_info.game_date.month > 5 and radiation_result.game_info.game_date.month < 9):
+        if (month > 5 and month < 9):
             season_affect = 1.2
         # winter
-        elif(radiation_result.game_info.game_date.month > 11 or radiation_result.game_info.game_date.month < 3):
+        elif(month > 11 or month < 3):
             season_affect = 0.8
     # if they're on South America, Africa, or Australia
     elif (continent in ["sa", "af", "au"]):
         # winter
-        if (radiation_result.game_info.game_date.month > 5 and radiation_result.game_info.game_date.month < 9):
+        if (month > 5 and month < 9):
             season_affect = 0.8
         # summer
-        elif(radiation_result.game_info.game_date.month > 11 or radiation_result.game_info.game_date.month < 3):
+        elif(month > 11 or month < 3):
             season_affect = 1.2
     # if they're on Antarctica
     else:
@@ -117,7 +110,7 @@ def calc_food_rev(api_result):
     # apply the radiation factor to the total production
     food_production *= radiationFactor
     # return the difference between the food_production and food_usage to determine net food revenue
-    return round(food_production - food_usage, 2), food_production, food_usage
+    return my_round(food_production - food_usage), my_round(food_production), my_round(food_usage)
 
 
 # function for calculating the cost of bringing a nation from their current city count to a goal
@@ -181,11 +174,11 @@ def calc_raw_rev(nation_call, resource):
     mill_usage = 0
     power_usage = 0
     nation_info = {
-        'oil': [nation.emergency_gasoline_reserve, 3, 2],
-        'coal': [nation.iron_works, 3, 1.36],
-        'iron': [nation.iron_works, 3, 1.36],
-        'bauxite': [nation.bauxite_works, 3, 1.36],
-        'lead': [nation.arms_stockpile, 6, 1.34],
+        'oil': [nation.emergency_gasoline_reserve, 3, 1],
+        'coal': [nation.iron_works, 3, 0.36],
+        'iron': [nation.iron_works, 3, 0.36],
+        'bauxite': [nation.bauxite_works, 3, 0.36],
+        'lead': [nation.arms_stockpile, 6, 0.34],
         'uranium': [nation.uranium_enrichment_program, 0, 0]
     }
     if(resource not in nation_info.keys()):
@@ -213,14 +206,13 @@ def calc_raw_rev(nation_call, resource):
         # number of power plants in the city
         power = info[resource][2]
         city_production = raw_improvement * 3
-        if(resource == 'uranium' and project):
-            city_production *= 2
-        city_production *= (1 + col_round((raw_improvement - 1) * 12.5)/100)
+        if(resource == 'uranium'):
+            city_production *= (1 + project) * (1 + max(my_round((raw_improvement - 1) * 0.125), 0))
+        else:
+            city_production *= (1 + max(my_round((raw_improvement - 1) * 0.05555555555), 0))
         production += city_production
         city_mill = manu_improvement * manu_used
-        city_mill *= (1 + col_round((manu_improvement - 1) * 12.5)/100)
-        if (project):
-            city_mill *= project_mod
+        city_mill *= (1 + max(my_round((manu_improvement - 1) * 0.125), 0)) * (1 + project * project_mod)
         mill_usage += city_mill
         if(resource == 'uranium'):
             power_infra = 2000
@@ -237,16 +229,16 @@ def calc_raw_rev(nation_call, resource):
                 elif (temp_infra > 0):
                     power_usage += math.ceil(temp_infra / infra_per) * 1.2
                     temp_infra = 0
-    return round(production - mill_usage - power_usage, 2), round(production, 2), round(mill_usage + power_usage, 2)
+    return my_round(production - mill_usage - power_usage), my_round(production), my_round(mill_usage + power_usage)
 
 def calc_manu_rev(nation_call, resource):
     nation = nation_call.nations[0]
     production = 0
     nation_info = {
-        'steel': [nation.iron_works, 9, 1.36],
-        'aluminum': [nation.bauxite_works, 9, 1.36],
-        'gasoline': [nation.emergency_gasoline_reserve, 6, 2, 1.34],
-        'munitions': [nation.arms_stockpile, 18]
+        'steel': [nation.iron_works, 9, 0.36],
+        'aluminum': [nation.bauxite_works, 9, 0.36],
+        'gasoline': [nation.emergency_gasoline_reserve, 6, 2, 0.34],
+        'munitions': [nation.arms_stockpile, 18, 1]
     }
     if(resource not in nation_info.keys()):
         raise InvalidResourceException(resource)
@@ -262,11 +254,8 @@ def calc_manu_rev(nation_call, resource):
         }
         if city.powered:
             improvement = city_info[resource]
-            city_production = improvement * generated * (1 + col_round((improvement - 1) * 12.5)/100)
-            if project:
-                city_production *= project_mod
-            production += city_production
-    return production
+            production += improvement * generated * (1 + max(my_round((improvement - 1) * 0.125), 0)) * (1 + project * project_mod)
+    return my_round(production)
 
 
 ### The following code is taken directly from the open source Rift project ###
