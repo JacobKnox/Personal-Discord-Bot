@@ -77,7 +77,16 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.MissingRequiredArgument):
         # Send a message saying the user missed required arguments
         cmd = bot.get_command(str(ctx.command))
-        embed = discord.Embed(title="Missing Arguments", description=f"Command usage:\n{cmd.usage}", color=0xFF5733)
+        embed = discord.Embed(title="Missing Argument(s)", description=f"Command usage:\n{cmd.usage}", color=0xFF5733)
+        await ctx.send(embed=embed)
+        # Log that the user attempted to use the command without the required arguments
+        ERROR_LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) improperly used command: {ctx.command}\n')
+        ERROR_LOG.flush()
+        return
+    elif isinstance(error, commands.BadArgument):
+        # Send a message saying the user used a bad argument
+        cmd = bot.get_command(str(ctx.command))
+        embed = discord.Embed(title="Bad Argument(s)", description=f"Command usage:\n{cmd.usage}", color=0xFF5733)
         await ctx.send(embed=embed)
         # Log that the user attempted to use the command without the required arguments
         ERROR_LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) improperly used command: {ctx.command}\n')
@@ -178,9 +187,9 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
             embed=discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
             await ctx.send(embed=embed)
             return
-        embed=discord.Embed(title=f"{resource.capitalize()} Statistics", description=f'Statistics about {resource} revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(production): ,.2f}\nUsage: {usage: ,.2f}\nNet: {net: ,.2f}', color=0xFF5733)
+        embed=discord.Embed(title=f"{resource.capitalize()} Statistics", description=f'Statistics about {resource.lower()} revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(production): ,.2f}\nUsage: {usage: ,.2f}\nNet: {net: ,.2f}', color=0xFF5733)
         # Log the command usage and send the generated embed
-        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwraw command with id {nation_id} and resource {resource}.\n')
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwraw command with id {nation_id} and resource {resource.lower()}.\n')
         LOG.flush()
         await ctx.send(embed=embed)
         
@@ -200,9 +209,9 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
             embed=discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
             await ctx.send(embed=embed)
             return
-        embed=discord.Embed(title=f"{resource.capitalize()} Statistics", description=f'Statistics about {resource} revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {production: ,.2f}\nUsage: {0: ,.2f}\nNet: {production: ,.2f}', color=0xFF5733)
+        embed=discord.Embed(title=f"{resource.capitalize()} Statistics", description=f'Statistics about {resource.lower()} revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {production: ,.2f}\nUsage: {0: ,.2f}\nNet: {production: ,.2f}', color=0xFF5733)
         # Log the command usage and send the generated embed
-        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwmanu command with id {nation_id} and resource {resource}.\n')
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwmanu command with id {nation_id} and resource {resource.lower()}.\n')
         LOG.flush()
         await ctx.send(embed=embed)
 
