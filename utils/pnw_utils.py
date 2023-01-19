@@ -249,37 +249,22 @@ def calc_manu_rev(nation_call: pnwkit.Result, resource: str) -> float:
     return my_round(production)
 
 
-### The following code is taken directly from the open source Rift project ###
+### The following code is modified code from the open source Rift project ###
 ### (https://github.com/mrvillage/rift/blob/master/bot/src/funcs/tools.py) ###
 def infrastructure_price(amount: float, /) -> float:
     return ((abs(amount - 10) ** 2.2) / 710) + 300
 
 
 def calculate_infrastructure_value(start: float, end: float, /) -> float:
-    value = 0
-    start = round(start, 2)
-    end = round(end, 2)
+    start = my_round(start)
+    end = my_round(end)
     difference = end - start
-    if not difference:
-        return 0
-    if difference < 0:
-        return 150 * difference
+    chunk = my_round(infrastructure_price(start)) if difference >= 0 else 150
     if difference > 100 and difference % 100 == 0:
-        chunk = round(infrastructure_price(start), 2) * 100
-        return value + chunk + calculate_infrastructure_value(start + 100, end)
+        return chunk * 100 + calculate_infrastructure_value(start + 100, end)
     if difference > 100 and difference % 100 != 0:
-        chunk = round(infrastructure_price(start), 2) * (difference % 100)
-        return (
-            value
-            + chunk
-            + calculate_infrastructure_value(start + difference % 100, end)
-        )
-    if difference <= 100:
-        chunk = round(infrastructure_price(start), 2) * difference
-        return value + chunk
-    return value
-
-
+        return chunk * (difference % 100) + calculate_infrastructure_value(start + difference % 100, end)
+    return chunk * difference
 ### End of code from Rift ###
 
 def get_query(query_type: str = "general", nation_id: int = None, api_key: str = API_KEY) -> pnwkit.Result:
