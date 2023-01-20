@@ -126,11 +126,29 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
         # Otherwise, calculate it with their specific info
         else:
             # Get the infra query result
-            result = pnw.get_query("infra", nation_id)
+            result = pnw.get_query("infraland", nation_id)
             infra_cost = pnw.calc_infra_cost(start, end, result)
             embed=discord.Embed(title="Calculate Infrastructure Cost", description=f'The cost to go from {start} to {end} for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}) is:\n${infra_cost: ,.2f}', color=0xFF5733)
         # Log the command usage and send the created embed
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwinfra command.\n')
+        LOG.flush()
+        await ctx.send(embed=embed)
+        
+    # Add a command to calculate the cost of infrastructure
+    @commands.command(name='pnwland', help="Calculates the cost to go from one level of land to another, optionally for a specific nation.", brief="Calculates cost of land.", usage="!pnwland start end (nation_id)")
+    async def calc_land(self, ctx: commands.Context, start: float = commands.parameter(description="Starting land level"), end: float = commands.parameter(description="Ending land level"), nation_id: typing.Optional[int] = commands.parameter(default=None, description="ID of the nation to calculate for")) -> None:
+        # If the nation_id (an optional parameter) is not set, then calculate the value without their specific info
+        if nation_id is None:
+            land_cost = pnw.calculate_land_value(start, end)
+            embed=discord.Embed(title="Calculate Land Cost", description=f'The cost to go from {start} to {end} is:\n${land_cost: ,.2f}', color=0xFF5733)
+        # Otherwise, calculate it with their specific info
+        else:
+            # Get the infra query result
+            result = pnw.get_query("infraland", nation_id)
+            land_cost = pnw.calc_land_cost(start, end, result)
+            embed=discord.Embed(title="Calculate Land Cost", description=f'The cost to go from {start} to {end} for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}) is:\n${land_cost: ,.2f}', color=0xFF5733)
+        # Log the command usage and send the created embed
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwland command.\n')
         LOG.flush()
         await ctx.send(embed=embed)
 

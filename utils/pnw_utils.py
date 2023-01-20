@@ -158,6 +158,23 @@ def calc_infra_cost(current_infra: float, goal_infra: float, nation_call: pnwkit
             infra_cost *= modifier
     return my_round(infra_cost)
 
+def calc_land_cost(current_land: float, goal_land: float, nation_call: pnwkit.Result = None) -> float:
+    land_cost = calculate_land_value(current_land, goal_land)
+    if nation_call is not None:
+        nation = nation_call.nations[0]
+        if (land_cost > 0):
+            modifier = 1
+            if(nation.arable_land_agency):
+                modifier -= 0.05
+                if(nation.advanced_engineering_corps):
+                    modifier -= 0.05
+            if (nation.domestic_policy == pnwkit.data.DomesticPolicy(6) and nation.government_support_agency):
+                modifier -= 0.075
+            elif (nation.domestic_policy == pnwkit.data.DomesticPolicy(6)):
+                modifier -= 0.05
+            land_cost *= modifier
+    return my_round(land_cost)
+
 def calc_raw_rev(nation_call: pnwkit.Result, resource: str) -> tuple[float, float, float]:
     nation = nation_call.nations[0]
     # initialize helper variables for production and usage to 0
@@ -254,7 +271,6 @@ def calc_manu_rev(nation_call: pnwkit.Result, resource: str) -> float:
 def infrastructure_price(amount: float, /) -> float:
     return ((abs(amount - 10) ** 2.2) / 710) + 300
 
-
 def calculate_infrastructure_value(start: float, end: float, /) -> float:
     start = my_round(start)
     end = my_round(end)
@@ -264,6 +280,20 @@ def calculate_infrastructure_value(start: float, end: float, /) -> float:
         return chunk * 100 + calculate_infrastructure_value(start + 100, end)
     if difference > 100 and difference % 100 != 0:
         return chunk * (difference % 100) + calculate_infrastructure_value(start + difference % 100, end)
+    return chunk * difference
+
+def land_price(amount: float, /) -> float:
+    return (0.002 * (amount - 20) * (amount - 20)) + 50
+
+def calculate_land_value(start: float, end: float) -> float:
+    start = my_round(start)
+    end = my_round(end)
+    difference = end - start
+    chunk = 50 if difference < 0 else my_round(land_price(start))
+    if difference > 500 and difference % 500 == 0:
+        return chunk * 500 + calculate_land_value(start + 500, end)
+    if difference > 500 and difference % 500 != 0:
+        return chunk * (difference % 500) + calculate_land_value(start + difference % 500, end)
     return chunk * difference
 ### End of code from Rift ###
 
@@ -309,7 +339,7 @@ def get_query(query_type: str = "general", nation_id: int = None, api_key: str =
             domestic_policy
             government_support_agency
             """)
-    elif query_type == "infra":
+    elif query_type == "infraland":
         query = kit.query(
                 "nations", {
                     "id": nation_id,
@@ -321,6 +351,7 @@ def get_query(query_type: str = "general", nation_id: int = None, api_key: str =
                 government_support_agency
                 center_for_civil_engineering
                 advanced_engineering_corps
+                arable_land_agency
                 """)
     elif query_type == "radiation":
         query = kit.query(
