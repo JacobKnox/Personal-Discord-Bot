@@ -370,7 +370,41 @@ def get_query(query_type: str = "general", nation_id: int = None, api_key: str =
             bauxite_works
             uranium_enrichment_program
             """)
-    elif query_type == "general":
+    elif query_type == "treasure":
+        query = kit.query("treasures", {},"""
+                name,
+                color,
+                continent,
+                bonus,
+                spawn_date,
+                nation_id,
+                nation
+                """)
+    elif query_type == "my_info":
+        if api_key == API_KEY:
+            query = kit.query(
+                    "nations", {
+                        "id": nation_id,
+                        "first": 1
+                    }, """
+                    soldiers
+                    tanks
+                    aircraft
+                    ships
+                    """)
+        else:
+            temp_kit = pnwkit.QueryKit(api_key)
+            query = temp_kit.query(
+                    "nations", {
+                        "id": nation_id,
+                        "first": 1
+                    }, """
+                    soldiers
+                    tanks
+                    aircraft
+                    ships
+                    """)
+    else:
         query = kit.query(
                 "nations", {
                     "id": nation_id,
@@ -404,39 +438,15 @@ def get_query(query_type: str = "general", nation_id: int = None, api_key: str =
                 iron_works
                 resource_production_center
                 """)
-    elif query_type == "my_info":
-        if api_key == API_KEY:
-            query = kit.query(
-                    "nations", {
-                        "id": nation_id,
-                        "first": 1
-                    }, """
-                    soldiers
-                    tanks
-                    aircraft
-                    ships
-                    """)
-        else:
-            temp_kit = pnwkit.QueryKit(api_key)
-            query = temp_kit.query(
-                    "nations", {
-                        "id": nation_id,
-                        "first": 1
-                    }, """
-                    soldiers
-                    tanks
-                    aircraft
-                    ships
-                    """)
     try:
         result = query.get()
-        if query_type != "radiation" and len(result.nations) == 0:
+        if query_type != "radiation" and query_type != "treasure" and len(result.nations) == 0:
             raise NoNationFoundException("No nation exists with that nation id.")
         return result
     except NoNationFoundException as inst:
         raise inst
-    except Exception as inst:
-        raise GeneralException(inst)
+    #except Exception as inst:
+    #    raise GeneralException(inst)
         
 # "Test" API call to get a bunch of information
 general_query = get_query(nation_id = 244934)

@@ -98,6 +98,7 @@ async def on_command_error(ctx: commands.Context, error: Exception) -> None:
     # Log the error
     ERROR_LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) caused error {error.__class__.__name__} ({", ".join(error.args)}) with message {ctx.message.content}.\n')
     ERROR_LOG.flush()
+    raise error
     return
 
 
@@ -212,6 +213,13 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwmanu command with id {nation_id} and resource {resource.lower()}.\n')
         LOG.flush()
         await ctx.send(embed=embed)
+        
+    @commands.command(name="treasures", enabled=False)
+    async def treasures(self, ctx):
+        result = pnw.get_query("treasure")
+        greens = [treasure for treasure in result.treasures if (treasure.color == "green" or treasure.color == "any")]
+        for treasure in greens:
+            print(treasure.color)
 
 
     #################
