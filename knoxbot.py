@@ -16,19 +16,39 @@ import utils.pnw_utils as pnw # pnw utility functions
 from utils.utils import * # general utility functions
 from exceptions import * # custom exceptions
 
+#Initialize the bot with a set prefix of ! and all possible Intents
+bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
+
+errors = []
+
 # Load the env from its path
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 # Get important info from the env
 TOKEN = ENV("DISCORD_TOKEN")
-GUILD = ENV('DISCORD_GUILD')
-LOG = open(ENV('LOG_DIRECTORY'), "a")
-ERROR_LOG = open(ENV('ERROR_LOG_DIRECTORY'), "a")
-admins, allowed_guilds = start(dotenv_path)
+if not TOKEN or TOKEN == '':
+    raise NoTokenException()
+try:
+    LOG = open(ENV('LOG_DIRECTORY'), "a")
+except OSError as inst:
+    inst.message = "Could not open LOG."
+    errors.append(inst)
+    pass
+except TypeError as inst:
+    inst.message = "No file provided for LOG."
+    errors.append(inst)
+    pass
+try:
+    ERROR_LOG = open(ENV('ERROR_LOG_DIRECTORY'), "a")
+except OSError as inst:
+    inst.message = "Could not open ERROR_LOG."
+    errors.append(inst)
+    pass
+except TypeError as inst:
+    inst.message = "No file provided for ERROR_LOG."
+    errors.append(inst)
+    pass
 start_time = 0
-
-#Initialize the bot with a set prefix of ! and all possible Intents
-bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 
 
 
@@ -50,6 +70,13 @@ async def on_ready() -> None:
     global admins, allowed_guilds
     # Call the start function to intialize the global admin and allowed_guilds variables
     admins, allowed_guilds = start(dotenv_path)
+    if errors:
+        if admins:
+            for error in errors:
+                me = bot.get_user(admins[0])
+                await me.send(f"There has been an error: {error.__class__.__name__}\n{error.message}")
+        else:
+            raise errors[0]
     # Tell what guilds (servers) the bot is currently in, just because (might delete later)
     print(f'{bot.user} is connected to the following guilds:')
     for guild in bot.guilds:

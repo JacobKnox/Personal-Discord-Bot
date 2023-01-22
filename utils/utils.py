@@ -44,11 +44,12 @@ def start(dotenv_path: str) -> tuple[list[int], list[int]]:
         for line in f.readlines():
             key, value = line.strip().split("=")
             # If the key is ADMIN_IDS, then parse it
-            if(key == "ADMIN_IDS"):  
+            if(key == "ADMIN_IDS" and value != ''):  
                 admins = [int(id) for id in value.split(",")]
             # If the key is ALLOWED_GUILDS, then parse it
-            if(key == "ALLOWED_GUILDS"):
+            if(key == "ALLOWED_GUILDS" and value != ''):
                 allowed_guilds = [int(id) for id in value.split(",")]
+        
     return admins, allowed_guilds
 
 # Inspired by code from https://www.reddit.com/r/learnpython/comments/92ne2s/why_does_round05_0/

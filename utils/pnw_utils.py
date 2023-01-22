@@ -476,8 +476,8 @@ def get_query(query_type: str = "general", nation_id: int = None, api_key: str =
         return result
     except NoNationFoundException as inst:
         raise inst
-    #except Exception as inst:
-    #    raise GeneralException(inst)
+    except Exception as inst:
+        raise GeneralException(inst)
         
 # "Test" API call to get a bunch of information
 general_query = get_query(nation_id = 244934)
