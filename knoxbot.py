@@ -19,7 +19,7 @@ from exceptions import * # custom exceptions
 #Initialize the bot with a set prefix of ! and all possible Intents
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 
-errors = []
+errors: list[Exception] = []
 
 # Load the env from its path
 dotenv_path = join(dirname(__file__), '.env')
@@ -68,23 +68,35 @@ start_time = 0
 @bot.event
 async def on_ready() -> None:
     global admins, allowed_guilds
+    admins = []
+    allowed_guilds = []
     # Call the start function to intialize the global admin and allowed_guilds variables
-    admins, allowed_guilds = start(dotenv_path)
+    admins, allowed_guilds, start_errors = start(dotenv_path)
+    for error in start_errors:
+        errors.append(error)
     if errors:
         if admins:
+            me = bot.get_user(admins[0])
             for error in errors:
-                me = bot.get_user(admins[0])
-                await me.send(f"There has been an error: {error.__class__.__name__}\n{error.message}")
+                await attempt_send(me, f"There has been an error: {error.__class__.__name__}\n{error.message}")
         else:
             raise errors[0]
+        await bot.close()
+        sys.exit()
     # Tell what guilds (servers) the bot is currently in, just because (might delete later)
     print(f'{bot.user} is connected to the following guilds:')
     for guild in bot.guilds:
         print(f'{guild.name} (id: {guild.id})')
     # Add all of the cog classes to the bot, so commands can be used and categorized in !help
-    await bot.add_cog(PoliticsandWar(bot))
-    await bot.add_cog(Moderation(bot))
-    await bot.add_cog(BotAdmin(bot))
+    try:
+        await bot.add_cog(PoliticsandWar(bot))
+        await bot.add_cog(Moderation(bot))
+        await bot.add_cog(BotAdmin(bot))
+    except Exception as inst:
+        me: discord.User = bot.get_user(admins[0])
+        await attempt_send(me, f"There has been an error: {inst.__class__.__name__}\n{', '.join(inst.args)}")
+        await bot.close()
+        sys.exit()
     # Let me know that all of the cogs have been loaded
     print("Bot is ready to use!")
 
@@ -95,7 +107,7 @@ async def on_command_error(ctx: commands.Context, error: Exception) -> None:
     if isinstance(error, commands.CommandNotFound):
         # Send a message saying it doesn't exist
         embed = discord.Embed(title="Command Not Found", description=f"The command you attempted to use, {ctx.message.content}, does not currently exist.", color=0xFF5733)
-        await ctx.send(embed=embed)
+        await attempt_send(ctx, embed)
         # Log that the user attempted to use this fictional command
         ERROR_LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use non-existent command: {ctx.message.content}\n')
         ERROR_LOG.flush()
@@ -105,7 +117,7 @@ async def on_command_error(ctx: commands.Context, error: Exception) -> None:
         # Send a message saying the user missed required arguments
         cmd = bot.get_command(str(ctx.command))
         embed = discord.Embed(title="Missing Argument(s)", description=f"Command usage:\n{cmd.usage}", color=0xFF5733)
-        await ctx.send(embed=embed)
+        await attempt_send(ctx, embed)
         # Log that the user attempted to use the command without the required arguments
         ERROR_LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) improperly used command: {ctx.command}\n')
         ERROR_LOG.flush()
@@ -114,19 +126,18 @@ async def on_command_error(ctx: commands.Context, error: Exception) -> None:
         # Send a message saying the user used a bad argument
         cmd = bot.get_command(str(ctx.command))
         embed = discord.Embed(title="Bad Argument(s)", description=f"Command usage:\n{cmd.usage}", color=0xFF5733)
-        await ctx.send(embed=embed)
+        await attempt_send(ctx, embed)
         # Log that the user attempted to use the command without the required arguments
         ERROR_LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) improperly used command: {ctx.command}\n')
         ERROR_LOG.flush()
         return
     # For all other errors, get me (I'm always the first admin) and send me a summary of the error
     me = bot.get_user(admins[0])
-    await me.send(f"There has been an error: {error.__class__.__name__}\n{', '.join(error.args)}\nRaised when attempted: {ctx.message.content}")
+    await attempt_send(me, f"There has been an error: {error.__class__.__name__}\n{', '.join(error.args)}\nRaised when attempted: {ctx.message.content}")
     # Log the error
     ERROR_LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) caused error {error.__class__.__name__} ({", ".join(error.args)}) with message {ctx.message.content}.\n')
     ERROR_LOG.flush()
     raise error
-    return
 
 
 
@@ -159,7 +170,7 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
         # Log the command usage and send the created embed
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwinfra command.\n')
         LOG.flush()
-        await ctx.send(embed=embed)
+        await attempt_send(ctx, embed)
         
     # Add a command to calculate the cost of infrastructure
     @commands.command(name='pnwland', help="Calculates the cost to go from one level of land to another, optionally for a specific nation.", brief="Calculates cost of land.", usage="!pnwland start end (nation_id)")
@@ -177,7 +188,7 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
         # Log the command usage and send the created embed
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwland command.\n')
         LOG.flush()
-        await ctx.send(embed=embed)
+        await attempt_send(ctx, embed)
 
     # Add a command to calculate the cost to go from one city to another city
     @commands.command(name='pnwcity', help="Calculates the cost to go from one city to another, optionally for a specific nation.", brief="Calculates the cost of cities.", usage="!pnwcity start end (nation_id)")
@@ -195,7 +206,7 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
         # Log the command usage and send the created embed
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwcity command.\n')
         LOG.flush()
-        await ctx.send(embed=embed)
+        await attempt_send(ctx, embed)
 
 
     ####################
@@ -215,7 +226,7 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
         # Log the command usage and send the created embed
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwfood command with id {nation_id}.\n')
         LOG.flush()
-        await ctx.send(embed=embed)
+        await attempt_send(ctx, embed)
         
     # Add a command to calculate revenue (usage, production, and net revenue) for any raw resource of a nation
     @commands.command(name="pnwraw", help="Calculates the raw's usage, production, and net revenue for a nation.", brief="Calculates raw stats for a nation.", usage="!pnwraw nation_id resource")
@@ -230,13 +241,13 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
             net, production, usage = pnw.calc_raw_rev(result, resource.lower())
         except InvalidResourceException as inst:
             embed=discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
-            await ctx.send(embed=embed)
+            await attempt_send(ctx, embed)
             return
         embed=discord.Embed(title=f"{resource.capitalize()} Statistics", description=f'Statistics about {resource.lower()} revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(production): ,.2f}\nUsage: {usage: ,.2f}\nNet: {net: ,.2f}', color=0xFF5733)
         # Log the command usage and send the generated embed
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwraw command with id {nation_id} and resource {resource.lower()}.\n')
         LOG.flush()
-        await ctx.send(embed=embed)
+        await attempt_send(ctx, embed)
         
     # Add a command to calculate revenue (usage, production, and net revenue) for any manufactured resource of a nation
     @commands.command(name="pnwmanu", help="Calculates the manufactured's usage, production, and net revenue for a nation.", brief="Calculates manufactured stats for a nation.", usage="!pnwmanu nation_id resource")
@@ -251,13 +262,13 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
             production = pnw.calc_manu_rev(result, resource.lower())
         except InvalidResourceException as inst:
             embed=discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
-            await ctx.send(embed=embed)
+            await attempt_send(ctx, embed)
             return
         embed=discord.Embed(title=f"{resource.capitalize()} Statistics", description=f'Statistics about {resource.lower()} revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {production: ,.2f}\nUsage: {0: ,.2f}\nNet: {production: ,.2f}', color=0xFF5733)
         # Log the command usage and send the generated embed
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwmanu command with id {nation_id} and resource {resource.lower()}.\n')
         LOG.flush()
-        await ctx.send(embed=embed)
+        await attempt_send(ctx, embed)
         
     @commands.command(name="treasures", enabled=False)
     async def treasures(self, ctx):
@@ -289,7 +300,7 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
         # Log the command usage
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !mypnwinfo command with id {nation_id}.\n')
         LOG.flush()
-        await ctx.send(embed=embed)
+        await attempt_send(ctx, embed)
     
     # Add cog check that simply calls the general_tasks utility function to check a few things
     async def cog_check(self, ctx: commands.Context) -> bool:
@@ -313,7 +324,7 @@ class Moderation(commands.Cog, description="Moderation commands"):
         embed = discord.Embed(title="Wall of Bans", description=f"The following Discord users have joined the Wall of Bans of {ctx.guild.name} for the reason '{reason}':\n{', '.join(f'{member.name} ({member.id})' for member in members)}", color=0xFF5733)
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !ban command to ban {", ".join(f"{member.name} ({member.id})" for member in members)} for the reason "{reason}".\n')
         LOG.flush()
-        await ctx.send(embed=embed)
+        await attempt_send(ctx, embed)
     
     # Add cog check that simply calls the general_tasks utility function to check a few things
     async def cog_check(self, ctx: commands.Context) -> bool:
@@ -342,7 +353,7 @@ class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins 
         embed=discord.Embed(title="Log Clear", description=f'Admin {ctx.message.author} ({ctx.message.author.id}) has cleared the logs.', color=0xFF5733)
         LOG.write(f'Admin {ctx.message.author} ({ctx.message.author.id}) has cleared the logs.')
         LOG.flush()
-        await ctx.send(embed=embed)
+        await attempt_send(ctx, embed)
 
     # Add a command to shut the bot off
     @commands.command(name="shutoff", help="Shuts the bot off completly", brief="Shut bot off", usage="!shutoff")
@@ -352,7 +363,7 @@ class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins 
         # Write to the log that the bot was shut off and send the embed
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) shut the bot off.\n')
         LOG.flush()
-        await ctx.send(embed=embed)
+        await attempt_send(ctx, embed)
         # Close the bot and exit the program
         await bot.close()
         sys.exit()
@@ -366,7 +377,7 @@ class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins 
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) restarted the bot.\n')
         LOG.flush()
         # Send the embed
-        await ctx.send(embed=embed)
+        await attempt_send(ctx, embed)
         # Re-execute this file to restart the bot
         os.execv(sys.executable, ['python'] + sys.argv)
         
@@ -383,7 +394,7 @@ class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins 
             embed=discord.Embed(title="Already Permitted", description=f'Server {guild_id} is already an allowed server for bot commands.', color=0xFF5733)
             LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to add server {guild_id}, but that server already has permission.\n')
             LOG.flush()
-            await ctx.send(embed=embed)
+            await attempt_send(ctx, embed)
             return
         # Create a flag to indicate whether or not the ALLOWED_GUILDS variable is found in the .env
         found = False
@@ -418,7 +429,7 @@ class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins 
         embed=discord.Embed(title="Server Added", description=f"Admin {ctx.message.author} ({ctx.message.author.id}) has added the guild {guild_id} to the bot's permitted guilds.", color=0xFF5733)
         LOG.write(f"Admin {ctx.message.author} ({ctx.message.author.id}) has added the guild {guild_id} to the bot's permitted guilds.")
         LOG.flush()
-        await ctx.send(embed=embed)
+        await attempt_send(ctx, embed)
     
     # Add a command where I can try to keep track of how much time I spend working on the bot
     @commands.command(name="work", help="Start or stop the clock of working on the bot.", usage="!work [start/stop]")
@@ -429,7 +440,7 @@ class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins 
         # If the clock status is start, then set the start time and message me saying I clocked in
         if clock == "start":
             start_time = int(time.time())
-            await me.send(f"You've 'clocked in' to working on the bot.")
+            await attempt_send(me, f"You've 'clocked in' to working on the bot.")
         # Otherwise, if it is stop, the set the end time
         elif clock == "stop":
             end_time = int(time.time())
@@ -454,7 +465,7 @@ class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins 
                         f.write(line)
                         pass
             # Message me letting me know I clocked out
-            await me.send(f"You've 'clocked out' to working on the bot.")
+            await attempt_send(me, f"You've 'clocked out' to working on the bot.")
             
     # Add a cog check that checks if the user of these commands is an admin
     async def cog_check(self, ctx: commands.Context) -> bool:
@@ -465,7 +476,7 @@ class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins 
         embed=discord.Embed(title="Improper Access", description=f'User {ctx.message.author} ({ctx.message.author.id}) does not have permissions to run this command. Contact an Admin to resolve this issue.', color=0xFF5733)
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use command {ctx.command}, but did not have proper access.\n')
         LOG.flush()
-        await ctx.send(embed=embed)
+        await attempt_send(ctx, embed)
         return False
     
 # Run the bot
