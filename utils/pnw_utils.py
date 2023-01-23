@@ -15,6 +15,8 @@ load_dotenv(dotenv_path)
 
 # save my API key in a variable
 API_KEY = ENV("PNW_API_KEY")
+if not API_KEY or API_KEY == '':
+    raise NoKeyException("PNW_API_KEY")
 RESOURCES  = {
     "af": ["oil", "bauxite", "uranium"],
     "an": ["oil", "coal", "uranium"],
@@ -476,8 +478,8 @@ def get_query(query_type: str = "general", nation_id: int = None, api_key: str =
         return result
     except NoNationFoundException as inst:
         raise inst
-    #except Exception as inst:
-    #    raise GeneralException(inst)
+    except Exception as inst:
+        raise GeneralException(inst)
         
 # "Test" API call to get a bunch of information
 general_query = get_query(nation_id = 244934)

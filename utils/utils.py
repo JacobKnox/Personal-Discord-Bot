@@ -28,7 +28,7 @@ async def resource_tasks(nation_id: int, ctx: commands.Context) -> tuple[pnwkit.
     try:
         result = pnw.get_query("resource", nation_id)
     except Exception as inst:
-        embed=discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
+        embed = discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
         await ctx.send(embed=embed)
         return None, True
     return result, False
@@ -36,25 +36,49 @@ async def resource_tasks(nation_id: int, ctx: commands.Context) -> tuple[pnwkit.
 # A utility function to initialize (or re-define) certain variables
 def start(dotenv_path: str) -> tuple[list[int], list[int]]:
     # Initialize the variables to None in case they don't exist in the env file
-    admins = []
-    allowed_guilds = []
+    admins: list[int] = []
+    allowed_guilds: list[int] = []
+    errors: list[Exception] = []
     # Open the env file
-    with open(dotenv_path, "r") as f:
-        # Loop through the lines and split them on the equals
-        for line in f.readlines():
-            key, value = line.strip().split("=")
-            # If the key is ADMIN_IDS, then parse it
-            if(key == "ADMIN_IDS"):  
-                admins = [int(id) for id in value.split(",")]
-            # If the key is ALLOWED_GUILDS, then parse it
-            if(key == "ALLOWED_GUILDS"):
-                allowed_guilds = [int(id) for id in value.split(",")]
-    return admins, allowed_guilds
+    try:
+        with open(dotenv_path, "r") as f:
+            # Loop through the lines and split them on the equals
+            for line in f.readlines():
+                key, value = line.strip().split("=")
+                # If the key is ADMIN_IDS, then parse it
+                if(key == "ADMIN_IDS" and value != ''):
+                    try:
+                        admins = [int(id) for id in value.split(",")]
+                    except ValueError as inst:
+                        inst.message = "An admin id was not an integer."
+                        errors.append(inst)
+                        pass
+                # If the key is ALLOWED_GUILDS, then parse it
+                if(key == "ALLOWED_GUILDS" and value != ''):
+                    try:
+                        allowed_guilds = [int(id) for id in value.split(",")]
+                    except ValueError as inst:
+                        inst.message = "A guild id was not an integer."
+                        errors.append(inst)
+                        pass
+    except Exception as inst:
+        errors.append(inst)
+        
+    return admins, allowed_guilds, errors
 
 # Inspired by code from https://www.reddit.com/r/learnpython/comments/92ne2s/why_does_round05_0/
 def my_round(num: float, places: int = 2) -> float:
-    temp = num * (10 ** places)
-    frac = temp - math.floor(temp)
+    temp: float = num * (10 ** places)
+    frac: float = temp - math.floor(temp)
     if frac < 0.5:
         return math.floor(temp) / (10 ** places)
     return math.ceil(temp) / (10 ** places)
+
+async def attempt_send(destination: discord.User | commands.Context, message: str | discord.Embed):
+    try:
+        if type(message) is str:
+            await destination.send(message)
+        else:
+            await destination.send(embed = message)
+    except Exception as inst:
+        raise inst
