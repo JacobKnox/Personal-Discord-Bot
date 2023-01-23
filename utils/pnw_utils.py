@@ -15,6 +15,8 @@ load_dotenv(dotenv_path)
 
 # save my API key in a variable
 API_KEY = ENV("PNW_API_KEY")
+if not API_KEY or API_KEY == '':
+    raise NoKeyException("PNW_API_KEY")
 RESOURCES  = {
     "af": ["oil", "bauxite", "uranium"],
     "an": ["oil", "coal", "uranium"],

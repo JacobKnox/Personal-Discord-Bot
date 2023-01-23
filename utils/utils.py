@@ -79,6 +79,6 @@ async def attempt_send(destination: discord.User | commands.Context, message: st
         if type(message) is str:
             await destination.send(message)
         else:
-            await destination.send(embed=message)
+            await destination.send(embed = message)
     except Exception as inst:
         raise inst

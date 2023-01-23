@@ -45,3 +45,13 @@ class NoTokenException(Exception):
     super().__init__(self.message)
   
   pass
+
+class NoKeyException(Exception):
+  "Exception raised when no API key is provided."
+  
+  def __init__(self, key_name) -> None:
+    self.name = "NoKeyException"
+    self.message = f"{key_name} has not been provided. Functions relying on it will not work."
+    super().__init__(self.message)
+  
+  pass
