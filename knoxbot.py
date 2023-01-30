@@ -102,7 +102,9 @@ async def on_ready() -> None:
 
 # Event for when a command error occurs
 @bot.event
-async def on_command_error(ctx: commands.Context, error: Exception) -> None:
+async def on_command_error(ctx: commands.Context,
+                           error: Exception
+                           ) -> None:
     # If the error is that the attempted command does not exist
     if isinstance(error, commands.CommandNotFound):
         # Send a message saying it doesn't exist
@@ -170,15 +172,25 @@ async def on_command_error(ctx: commands.Context, error: Exception) -> None:
 # POLITICS AND WAR COMMANDS #
 #                           #
 #############################
-class PoliticsandWar(commands.Cog, name="Politics and War", description="All commands related to the Politics and War browser game."):
+class PoliticsandWar(commands.Cog,
+                     name="Politics and War",
+                     description="All commands related to the Politics and War browser game."):
     ########################
     # CALCULATION COMMANDS #
     ########################
 
 
     # Add a command to calculate the cost of infrastructure
-    @commands.command(name='pnwinfra', help="Calculates the cost to go from one level of infrastructure to another, optionally for a specific nation.", brief="Calculates cost of infrastrucutre.", usage="!pnwinfra start end (nation_id)")
-    async def calc_infra(self, ctx: commands.Context, start: float = commands.parameter(description="Starting infrastructure level"), end: float = commands.parameter(description="Ending instrastructure level"), nation_id: typing.Optional[int] = commands.parameter(default=None, description="ID of the nation to calculate for")) -> None:
+    @commands.command(name='pnwinfra',
+                      help="Calculates the cost to go from one level of infrastructure to another, optionally for a specific nation.",
+                      brief="Calculates cost of infrastrucutre.",
+                      usage="!pnwinfra start end (nation_id)")
+    async def calc_infra(self,
+                         ctx: commands.Context,
+                         start: float = commands.parameter(description="Starting infrastructure level"),
+                         end: float = commands.parameter(description="Ending instrastructure level"),
+                         nation_id: typing.Optional[int] = commands.parameter(default=None, description="ID of the nation to calculate for")
+                         ) -> None:
         # If the nation_id (an optional parameter) is not set, then calculate the value without their specific info
         if nation_id is None:
             infra_cost = pnw.calculate_infrastructure_value(start, end)
@@ -195,8 +207,16 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
         await attempt_send(ctx, embed)
         
     # Add a command to calculate the cost of infrastructure
-    @commands.command(name='pnwland', help="Calculates the cost to go from one level of land to another, optionally for a specific nation.", brief="Calculates cost of land.", usage="!pnwland start end (nation_id)")
-    async def calc_land(self, ctx: commands.Context, start: float = commands.parameter(description="Starting land level"), end: float = commands.parameter(description="Ending land level"), nation_id: typing.Optional[int] = commands.parameter(default=None, description="ID of the nation to calculate for")) -> None:
+    @commands.command(name='pnwland',
+                      help="Calculates the cost to go from one level of land to another, optionally for a specific nation.",
+                      brief="Calculates cost of land.",
+                      usage="!pnwland start end (nation_id)")
+    async def calc_land(self,
+                        ctx: commands.Context, 
+                        start: float = commands.parameter(description="Starting land level"),
+                        end: float = commands.parameter(description="Ending land level"),
+                        nation_id: typing.Optional[int] = commands.parameter(default=None, description="ID of the nation to calculate for")
+                        ) -> None:
         # If the nation_id (an optional parameter) is not set, then calculate the value without their specific info
         if nation_id is None:
             land_cost = pnw.calculate_land_value(start, end)
@@ -213,8 +233,16 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
         await attempt_send(ctx, embed)
 
     # Add a command to calculate the cost to go from one city to another city
-    @commands.command(name='pnwcity', help="Calculates the cost to go from one city to another, optionally for a specific nation.", brief="Calculates the cost of cities.", usage="!pnwcity start end (nation_id)")
-    async def calc_city(self, ctx: commands.Context, start: int = commands.parameter(description="Starting city level"), end: int = commands.parameter(description="Ending city level"), nation_id: typing.Optional[int] = commands.parameter(default=None, description="ID of the nation to calculate for")) -> None:
+    @commands.command(name='pnwcity',
+                      help="Calculates the cost to go from one city to another, optionally for a specific nation.",
+                      brief="Calculates the cost of cities.",
+                      usage="!pnwcity start end (nation_id)")
+    async def calc_city(self,
+                        ctx: commands.Context,
+                        start: int = commands.parameter(description="Starting city level"),
+                        end: int = commands.parameter(description="Ending city level"),
+                        nation_id: typing.Optional[int] = commands.parameter(default=None, description="ID of the nation to calculate for")
+                        ) -> None:
         # If the nation_id (an optional parameter) is not set, then calculate the value without their specific info
         if nation_id is None:
             city_cost = pnw.calc_city_cost(start, end)
@@ -238,8 +266,14 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
 
     # Add a command to calculate food revenue (usage, production, and net revenue) of a nation
     # Users may find a very small margin of error. This is being attributed to constantly fluctuating radiation in Orbis.
-    @commands.command(name="pnwfood", help="Calculates the food usage, production, and net revenue for a nation.", brief="Calculates food stats for a nation.", usage="!pnwfood nation_id")
-    async def calc_food(self, ctx: commands.Context, nation_id: int = commands.parameter(description="ID of the nation to calculate for")) -> None:
+    @commands.command(name="pnwfood",
+                      help="Calculates the food usage, production, and net revenue for a nation.",
+                      brief="Calculates food stats for a nation.",
+                      usage="!pnwfood nation_id")
+    async def calc_food(self,
+                        ctx: commands.Context,
+                        nation_id: int = commands.parameter(description="ID of the nation to calculate for")
+                        ) -> None:
         # Get the food query result
         result = pnw.get_query("food", nation_id)
         # Call the food calculation function
@@ -251,8 +285,15 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
         await attempt_send(ctx, embed)
         
     # Add a command to calculate revenue (usage, production, and net revenue) for any raw resource of a nation
-    @commands.command(name="pnwraw", help="Calculates the raw's usage, production, and net revenue for a nation.", brief="Calculates raw stats for a nation.", usage="!pnwraw nation_id resource")
-    async def calc_raw(self, ctx: commands.Context, nation_id: int = commands.parameter(description="ID of the nation to calculate for"), resource: str = commands.parameter(description="Raw resource to calculate the revenue for")) -> None:
+    @commands.command(name="pnwraw",
+                      help="Calculates the raw's usage, production, and net revenue for a nation.",
+                      brief="Calculates raw stats for a nation.",
+                      usage="!pnwraw nation_id resource")
+    async def calc_raw(self,
+                       ctx: commands.Context,
+                       nation_id: int = commands.parameter(description="ID of the nation to calculate for"),
+                       resource: str = commands.parameter(description="Raw resource to calculate the revenue for")
+                       ) -> None:
         # Do anything we need to related to resources
         # May get rid of utility function unless I need it for manufactured command and others
         result, flag = await resource_tasks(nation_id)
@@ -272,8 +313,15 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
         await attempt_send(ctx, embed)
         
     # Add a command to calculate revenue (usage, production, and net revenue) for any manufactured resource of a nation
-    @commands.command(name="pnwmanu", help="Calculates the manufactured's usage, production, and net revenue for a nation.", brief="Calculates manufactured stats for a nation.", usage="!pnwmanu nation_id resource")
-    async def calc_manu(self, ctx: commands.Context, nation_id: int = commands.parameter(description="ID of the nation to calculate for"), resource: str = commands.parameter(description="Manufactured resource to calculate the revenue for")) -> None:
+    @commands.command(name="pnwmanu",
+                      help="Calculates the manufactured's usage, production, and net revenue for a nation.",
+                      brief="Calculates manufactured stats for a nation.",
+                      usage="!pnwmanu nation_id resource")
+    async def calc_manu(self,
+                        ctx: commands.Context,
+                        nation_id: int = commands.parameter(description="ID of the nation to calculate for"),
+                        resource: str = commands.parameter(description="Manufactured resource to calculate the revenue for")
+                        ) -> None:
         # Do anything we need to related to resources
         # May get rid of utility function unless I need it for manufactured command and others
         result, flag = await resource_tasks(nation_id)
@@ -292,8 +340,10 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
         LOG.flush()
         await attempt_send(ctx, embed)
         
-    @commands.command(name="treasures", enabled=False)
-    async def treasures(self, ctx):
+    @commands.command(name="treasures",
+                      enabled=False)
+    async def treasures(self,
+                        ctx):
         result = pnw.get_query("treasure")
         greens = [treasure for treasure in result.treasures if (treasure.color == "green" or treasure.color == "any")]
         for treasure in greens:
@@ -306,8 +356,13 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
 
 
     # WIP command to display user's Politics and War information
-    @commands.command(name="mypnwinfo", enabled=False)
-    async def my_info(self, ctx: commands.Context, nation_id: int = commands.parameter(description="ID of the nation whose information is to be displayed"), api_key: typing.Optional[str]=commands.parameter(default=None, description="User's API key, used to access their personal information for display")) -> None:
+    @commands.command(name="mypnwinfo",
+                      enabled=False)
+    async def my_info(self,
+                      ctx: commands.Context,
+                      nation_id: int = commands.parameter(description="ID of the nation whose information is to be displayed"),
+                      api_key: typing.Optional[str]=commands.parameter(default=None, description="User's API key, used to access their personal information for display")
+                      ) -> None:
         await ctx.message.delete()
         # If they specified an API key, then they want to display sensitive information
         if api_key is not None:
@@ -325,7 +380,9 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
         await attempt_send(ctx, embed)
     
     # Add cog check that simply calls the general_tasks utility function to check a few things
-    async def cog_check(self, ctx: commands.Context) -> bool:
+    async def cog_check(self,
+                        ctx: commands.Context
+                        ) -> bool:
         return await generic_tasks(LOG, ctx, allowed_guilds)
 
 
@@ -336,11 +393,21 @@ class PoliticsandWar(commands.Cog, name="Politics and War", description="All com
 # MOD COMMANDS #
 #              #
 ################
-class Moderation(commands.Cog, description="Moderation commands"):
+class Moderation(commands.Cog,
+                 description="Moderation commands"):
     # WIP ban command for moderators to ban users
-    @commands.command(name="ban", enabled=False, help="Ban one or more user(s) with a specified reason", brief="Ban people", usage="!ban @Jacob @Wumpus Bad people")
+    @commands.command(name="ban",
+                      enabled=False,
+                      help="Ban one or more user(s) with a specified reason",
+                      brief="Ban people",
+                      usage="!ban @Jacob @Wumpus Bad people")
     @commands.has_permissions(ban_members=True)
-    async def ban(self, ctx: commands.Context, members: commands.Greedy[discord.Member] = commands.parameter(description="User(s) to ban"), *, reason: typing.Optional[str] = commands.parameter(default=None, description="Reason for banning the user(s)")) -> None:
+    async def ban(self,
+                  ctx: commands.Context,
+                  members: commands.Greedy[discord.Member] = commands.parameter(description="User(s) to ban"),
+                  *,
+                  reason: typing.Optional[str] = commands.parameter(default=None, description="Reason for banning the user(s)")
+                  ) -> None:
         for member in members:
             await member.ban(reason = reason)
         embed = discord.Embed(title="Wall of Bans", description=f"The following Discord users have joined the Wall of Bans of {ctx.guild.name} for the reason '{reason}':\n{', '.join(f'{member.name} ({member.id})' for member in members)}", color=0xFF5733)
@@ -349,7 +416,9 @@ class Moderation(commands.Cog, description="Moderation commands"):
         await attempt_send(ctx, embed)
     
     # Add cog check that simply calls the general_tasks utility function to check a few things
-    async def cog_check(self, ctx: commands.Context) -> bool:
+    async def cog_check(self,
+                        ctx: commands.Context
+                        ) -> bool:
         return await generic_tasks(LOG, ctx, allowed_guilds)
 
 
@@ -361,10 +430,17 @@ class Moderation(commands.Cog, description="Moderation commands"):
 # BOT ADMIN COMMANDS #
 #                    #
 ######################
-class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins of the bot"):
+class BotAdmin(commands.Cog,
+               name="Bot Admin",
+               description="Commands for admins of the bot"):
     # Add a command to clear the logs
-    @commands.command(name="clearlog", help="Clears all of the logs associated with the bot", brief="Clears logs", usage="!clearlogs")
-    async def clear_log(self, ctx: commands.Context) -> None:
+    @commands.command(name="clearlog",
+                      help="Clears all of the logs associated with the bot",
+                      brief="Clears logs",
+                      usage="!clearlogs")
+    async def clear_log(self,
+                        ctx: commands.Context
+                        ) -> None:
         # Clear the command log by opening and passing it
         with open(ENV('LOG_DIRECTORY'),'w') as _:
             pass
@@ -378,8 +454,13 @@ class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins 
         await attempt_send(ctx, embed)
 
     # Add a command to shut the bot off
-    @commands.command(name="shutoff", help="Shuts the bot off completly", brief="Shut bot off", usage="!shutoff")
-    async def shutoff(self, ctx: commands.Context) -> None:
+    @commands.command(name="shutoff",
+                      help="Shuts the bot off completly",
+                      brief="Shut bot off",
+                      usage="!shutoff")
+    async def shutoff(self,
+                      ctx: commands.Context
+                      ) -> None:
         # Create an embed saying that the bot was shut off by this specific admin
         embed = discord.Embed(title="Bot Shutoff", description=f'Admin {ctx.message.author} ({ctx.message.author.id}) has shutoff the bot.', color=0xFF5733)
         # Write to the log that the bot was shut off and send the embed
@@ -391,8 +472,13 @@ class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins 
         sys.exit()
 
     # Add a command to restart the bot
-    @commands.command(name="restart", help="Shuts the bot off and then brings it back online", brief="Restarts bot", usage="!restart")
-    async def restart(self, ctx: commands.Context) -> None:
+    @commands.command(name="restart",
+                      help="Shuts the bot off and then brings it back online",
+                      brief="Restarts bot",
+                      usage="!restart")
+    async def restart(self,
+                      ctx: commands.Context
+                      ) -> None:
         # Create an embed saying that the bot was restart by this specific admin
         embed = discord.Embed(title="Bot Restart", description=f'Admin {ctx.message.author} ({ctx.message.author.id}) has restarted the bot.', color=0xFF5733)
         # Write to the log that the bot was restart
@@ -404,8 +490,14 @@ class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins 
         os.execv(sys.executable, ['python'] + sys.argv)
         
     # Add a command to add a server to the permitted list of servers
-    @commands.command(name="addserver", help="Add a server to the list of servers the bot can be used in", brief="Add a permitted server", usage="!addserver (guild_id)")
-    async def add_server(self, ctx: commands.Context, guild_id: typing.Optional[int] = commands.parameter(default=None, description="The ID of the guild to add")) -> None:
+    @commands.command(name="addserver",
+                      help="Add a server to the list of servers the bot can be used in",
+                      brief="Add a permitted server",
+                      usage="!addserver (guild_id)")
+    async def add_server(self,
+                         ctx: commands.Context,
+                         guild_id: typing.Optional[int] = commands.parameter(default=None, description="The ID of the guild to add")
+                         ) -> None:
         global admins, allowed_guilds
         # If the user does not specify a guild_id, then they want to add the server they used the command in
         if guild_id is None:
@@ -454,8 +546,13 @@ class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins 
         await attempt_send(ctx, embed)
     
     # Add a command where I can try to keep track of how much time I spend working on the bot
-    @commands.command(name="work", help="Start or stop the clock of working on the bot.", usage="!work [start/stop]")
-    async def work(self, ctx: commands.Context, clock: str = commands.parameter(description="Whether or not to start or stop working")) -> None:
+    @commands.command(name="work",
+                      help="Start or stop the clock of working on the bot.",
+                      usage="!work [start/stop]")
+    async def work(self,
+                   ctx: commands.Context,
+                   clock: str = commands.parameter(description="Whether or not to start or stop working")
+                   ) -> None:
         global start_time
         # Get me (the first admin)
         me = bot.get_user(admins[0])
@@ -490,7 +587,9 @@ class BotAdmin(commands.Cog, name="Bot Admin", description="Commands for admins 
             await attempt_send(me, f"You've 'clocked out' to working on the bot.")
             
     # Add a cog check that checks if the user of these commands is an admin
-    async def cog_check(self, ctx: commands.Context) -> bool:
+    async def cog_check(self,
+                        ctx: commands.Context
+                        ) -> bool:
         # If they're an admin, then it simply returns true
         if ctx.message.author.id in admins:
             return True
