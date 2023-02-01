@@ -292,21 +292,32 @@ class PoliticsandWar(commands.Cog,
     async def calc_raw(self,
                        ctx: commands.Context,
                        nation_id: int = commands.parameter(description="ID of the nation to calculate for"),
-                       resource: str = commands.parameter(description="Raw resource to calculate the revenue for")
+                       resource: str = commands.parameter(default="all", description="Raw resource to calculate the revenue for")
                        ) -> None:
         # Do anything we need to related to resources
         # May get rid of utility function unless I need it for manufactured command and others
-        result, flag = await resource_tasks(nation_id)
+        result, flag = await resource_tasks(nation_id, ctx)
         if flag:
             return
         # Call the calculation function
-        try:
-            net, production, usage = pnw.calc_raw_rev(result, resource.lower())
-        except InvalidResourceException as inst:
-            embed = discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
-            await attempt_send(ctx, embed)
-            return
-        embed = discord.Embed(title=f"{resource.capitalize()} Statistics", description=f'Statistics about {resource.lower()} revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(production): ,.2f}\nUsage: {usage: ,.2f}\nNet: {net: ,.2f}', color=0xFF5733)
+        if resource.lower() == "all":
+            resources = {"coal": None, "oil": None, "iron": None, "lead": None, "bauxite": None, "uranium": None}
+            for resource in resources:
+                try:
+                    resources[resource] = pnw.calc_raw_rev(result, resource)
+                except InvalidResourceException as inst:
+                    embed = discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
+                    await attempt_send(ctx, embed)
+                    return
+            embed = discord.Embed(title="All Raw Resource Statistics", description="\n".join(f'{"**" + key.capitalize() + "**"}\nProduction: {value[1]: ,.2f}, Usage: {abs(value[2]): ,.2f}, Net: {value[0]: ,.2f}\n' for key, value in resources.items()), color=0xFF5733)
+        else:
+            try:
+                net, production, usage = pnw.calc_raw_rev(result, resource.lower())
+            except InvalidResourceException as inst:
+                embed = discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
+                await attempt_send(ctx, embed)
+                return
+            embed = discord.Embed(title=f"{resource.capitalize()} Statistics", description=f'Statistics about {resource.lower()} revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(production): ,.2f}\nUsage: {usage: ,.2f}\nNet: {net: ,.2f}', color=0xFF5733)
         # Log the command usage and send the generated embed
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwraw command with id {nation_id} and resource {resource.lower()}.\n')
         LOG.flush()
@@ -320,21 +331,32 @@ class PoliticsandWar(commands.Cog,
     async def calc_manu(self,
                         ctx: commands.Context,
                         nation_id: int = commands.parameter(description="ID of the nation to calculate for"),
-                        resource: str = commands.parameter(description="Manufactured resource to calculate the revenue for")
+                        resource: str = commands.parameter(default="all", description="Manufactured resource to calculate the revenue for")
                         ) -> None:
         # Do anything we need to related to resources
         # May get rid of utility function unless I need it for manufactured command and others
-        result, flag = await resource_tasks(nation_id)
+        result, flag = await resource_tasks(nation_id, ctx)
         if flag:
             return
         # Call the calculation function
-        try:
-            production = pnw.calc_manu_rev(result, resource.lower())
-        except InvalidResourceException as inst:
-            embed = discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
-            await attempt_send(ctx, embed)
-            return
-        embed = discord.Embed(title=f"{resource.capitalize()} Statistics", description=f'Statistics about {resource.lower()} revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {production: ,.2f}\nUsage: {0: ,.2f}\nNet: {production: ,.2f}', color=0xFF5733)
+        if resource.lower() == "all":
+            resources = {"steel": None, "aluminum": None, "gasoline": None, "munitions": None}
+            for resource in resources:
+                try:
+                    resources[resource] = pnw.calc_manu_rev(result, resource)
+                except InvalidResourceException as inst:
+                    embed = discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
+                    await attempt_send(ctx, embed)
+                    return
+            embed = discord.Embed(title="All Manufactured Resource Statistics", description="\n".join(f'{"**" + key.capitalize() + "**"}\nProduction: {value: ,.2f}, Usage: {0: ,.2f}, Net: {value: ,.2f}\n' for key, value in resources.items()), color=0xFF5733)
+        else:
+            try:
+                production = pnw.calc_manu_rev(result, resource.lower())
+            except InvalidResourceException as inst:
+                embed = discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
+                await attempt_send(ctx, embed)
+                return
+            embed = discord.Embed(title=f"{resource.capitalize()} Statistics", description=f'Statistics about {resource.lower()} revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {production: ,.2f}\nUsage: {0: ,.2f}\nNet: {production: ,.2f}', color=0xFF5733)
         # Log the command usage and send the generated embed
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwmanu command with id {nation_id} and resource {resource.lower()}.\n')
         LOG.flush()
