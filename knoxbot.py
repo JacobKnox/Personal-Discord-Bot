@@ -155,6 +155,12 @@ async def on_command_error(ctx: commands.Context,
         ERROR_LOG.flush()
         if flag:
             return
+    elif isinstance(error, commands.MissingPermissions):
+        embed = discord.Embed(title=f'{error.__class__.__name__}', description=f'{", ".join(error.args)}')
+        await attempt_send(ctx, embed)
+        return
+    elif isinstance(error, commands.CheckFailure):
+        return
     # For all other errors, get me (I'm always the first admin) and send me a summary of the error
     me = bot.get_user(admins[0])
     await attempt_send(me, f"There has been an error: {error.__class__.__name__}\n{', '.join(error.args)}\nRaised when attempted: {ctx.message.content}")
@@ -419,7 +425,6 @@ class Moderation(commands.Cog,
                  description="Moderation commands"):
     # WIP ban command for moderators to ban users
     @commands.command(name="ban",
-                      enabled=False,
                       help="Ban one or more user(s) with a specified reason",
                       brief="Ban people",
                       usage="!ban @Jacob @Wumpus Bad people")
@@ -428,11 +433,14 @@ class Moderation(commands.Cog,
                   ctx: commands.Context,
                   members: commands.Greedy[discord.Member] = commands.parameter(description="User(s) to ban"),
                   *,
-                  reason: typing.Optional[str] = commands.parameter(default=None, description="Reason for banning the user(s)")
+                  reason: typing.Optional[str] = commands.parameter(default="No reason given", description="Reason for banning the user(s)")
                   ) -> None:
+        if members is None:
+            await ctx.send("You must specify which members to ban.")
+            return
         for member in members:
             await member.ban(reason = reason)
-        embed = discord.Embed(title="Wall of Bans", description=f"The following Discord users have joined the Wall of Bans of {ctx.guild.name} for the reason '{reason}':\n{', '.join(f'{member.name} ({member.id})' for member in members)}", color=0xFF5733)
+        embed = discord.Embed(title="Wall of Bans", description=f'The following Discord users have joined the Wall of Bans of {ctx.guild.name} for the reason "{reason}":\n{"".join(f"{member.name} ({member.id})"for member in members)}\n', color=0xFF5733)
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !ban command to ban {", ".join(f"{member.name} ({member.id})" for member in members)} for the reason "{reason}".\n')
         LOG.flush()
         await attempt_send(ctx, embed)
