@@ -267,6 +267,10 @@ def calc_manu_rev(nation_call: pnwkit.Result, resource: str) -> float:
             production += improvement * generated * (1 + max(my_round((improvement - 1) * 0.125), 0)) * (1 + project * project_mod)
     return my_round(production)
 
+def market_info(resource: str) -> tuple[int, int]:
+    print(resource)
+    return get_query(query_type = "market", resource = resource, buy_or_sell = "buy")[0], get_query(query_type = "market", resource = resource, buy_or_sell = "sell")[0]
+
 
 ### The following code is modified code from the open source Rift project ###
 ### (https://github.com/mrvillage/rift/blob/master/bot/src/funcs/tools.py) ###
@@ -299,7 +303,7 @@ def calculate_land_value(start: float, end: float) -> float:
     return chunk * difference
 ### End of code from Rift ###
 
-def get_query(query_type: str = "general", nation_id: int = None, api_key: str = API_KEY) -> pnwkit.Result:
+def get_query(query_type: str = "general", nation_id: int = None, api_key: str = API_KEY, resource: str = None, buy_or_sell: str = None) -> pnwkit.Result:
     if query_type == "food":
         query = kit.query(
             "nations", {
@@ -325,6 +329,23 @@ def get_query(query_type: str = "general", nation_id: int = None, api_key: str =
             massirr
             fallout_shelter
             """)
+    elif query_type == "market":
+        GLOBAL = pnwkit.TradeType(0)
+        ORDER = pnwkit.OrderBy("RETURN_AMOUNT", pnwkit.Order.ASC if buy_or_sell == "sell" else pnwkit.Order.DESC)
+        print(GLOBAL)
+        print(ORDER)
+        query = kit.query(
+            "trades", {
+                "resource": resource,
+                "buy_or_sell": buy_or_sell,
+                "type": GLOBAL,
+                "accepted": False,
+                "orderBy": pnwkit.OrderBy("price", pnwkit.Order.ASC if buy_or_sell == "sell" else pnwkit.Order.DESC)
+            },
+            """
+            price
+            """
+        )
     elif query_type == "city":
         query = kit.query(
             "nations", {
@@ -478,8 +499,8 @@ def get_query(query_type: str = "general", nation_id: int = None, api_key: str =
         return result
     except NoNationFoundException as inst:
         raise inst
-    except Exception as inst:
-        raise GeneralException(inst)
+    #except Exception as inst:
+    #    raise GeneralException(inst)
         
 # "Test" API call to get a bunch of information
 general_query = get_query(nation_id = 244934)

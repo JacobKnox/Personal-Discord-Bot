@@ -376,6 +376,19 @@ class PoliticsandWar(commands.Cog,
         greens = [treasure for treasure in result.treasures if (treasure.color == "green" or treasure.color == "any")]
         for treasure in greens:
             print(treasure.color)
+    
+    @commands.command(name="pnwmarket",
+                      help="Returns the lowest sell offer and highest buy offer for a given resource.",
+                      brief="Returns market information for a resource.",
+                      usage="!pnwmarket resource",
+                      enabled=False)
+    async def market_info(self,
+                          ctx: commands.Context,
+                          resource: str = commands.parameter(description="Resource to get the market information for")
+                          ) -> None:
+        high_buy, low_sell = pnw.market_info(resource)
+        embed = discord.Embed(title=f'{resource.capitalize()} Market Information', description=f'Lowest Sell Offer: {low_sell}\nHighest Buy Offer: {high_buy}')
+        await attempt_send(ctx, embed)
 
 
     #################
@@ -436,7 +449,7 @@ class Moderation(commands.Cog,
                   reason: typing.Optional[str] = commands.parameter(default="No reason given", description="Reason for banning the user(s)")
                   ) -> None:
         if members is None:
-            await ctx.send("You must specify which members to ban.")
+            await attempt_send(ctx, "You must specify which members to ban.")
             return
         for member in members:
             await member.ban(reason = reason)
@@ -457,7 +470,7 @@ class Moderation(commands.Cog,
                   reason: typing.Optional[str] = commands.parameter(default="No reason given", description="Reason for kicking the user(s)")
                   ) -> None:
         if members is None:
-            await ctx.send("You must specify which members to kick.")
+            await attempt_send(ctx, "You must specify which members to kick.")
             return
         for member in members:
             await member.ban(reason = reason)
