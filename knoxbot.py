@@ -423,7 +423,7 @@ class PoliticsandWar(commands.Cog,
 ################
 class Moderation(commands.Cog,
                  description="Moderation commands"):
-    # WIP ban command for moderators to ban users
+    # Ban command for moderators to ban users
     @commands.command(name="ban",
                       help="Ban one or more user(s) with a specified reason",
                       brief="Ban people",
@@ -442,6 +442,27 @@ class Moderation(commands.Cog,
             await member.ban(reason = reason)
         embed = discord.Embed(title="Wall of Bans", description=f'The following Discord users have joined the Wall of Bans of {ctx.guild.name} for the reason "{reason}":\n{"".join(f"{member.name} ({member.id})"for member in members)}\n', color=0xFF5733)
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !ban command to ban {", ".join(f"{member.name} ({member.id})" for member in members)} for the reason "{reason}".\n')
+        LOG.flush()
+        await attempt_send(ctx, embed)
+        
+    @commands.command(name="kick",
+                      help="Kick one or more user(s) with a specified reason",
+                      brief="Kick people",
+                      usage="!kick @Jacob @Wumpus Bad people")
+    @commands.has_permissions(kick_members=True)
+    async def kick(self,
+                  ctx: commands.Context,
+                  members: commands.Greedy[discord.Member] = commands.parameter(description="User(s) to kick"),
+                  *,
+                  reason: typing.Optional[str] = commands.parameter(default="No reason given", description="Reason for kicking the user(s)")
+                  ) -> None:
+        if members is None:
+            await ctx.send("You must specify which members to kick.")
+            return
+        for member in members:
+            await member.ban(reason = reason)
+        embed = discord.Embed(title="Wall of Kicks", description=f'The following Discord users have joined the Wall of Kicks of {ctx.guild.name} for the reason "{reason}":\n{"".join(f"{member.name} ({member.id})"for member in members)}\n', color=0xFF5733)
+        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !kick command to kick {", ".join(f"{member.name} ({member.id})" for member in members)} for the reason "{reason}".\n')
         LOG.flush()
         await attempt_send(ctx, embed)
     
