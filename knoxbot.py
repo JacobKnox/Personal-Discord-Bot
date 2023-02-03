@@ -485,6 +485,46 @@ class Moderation(commands.Cog,
         LOG.flush()
         await attempt_send(ctx, embed)
     
+    @commands.command(name="mute",
+                      help="Mute one or more user(s)",
+                      brief="Mute people",
+                      usage="!mute @Jacob @Wumpus")
+    @commands.has_permissions(moderate_members=True, manage_roles=True)
+    async def mute(self,
+                   ctx: commands.Context,
+                   members: commands.Greedy[discord.Member] = commands.parameter(description="User(s) to mute"),
+                   ) -> None:
+        role = discord.utils.get(ctx.guild.roles, name="Muted")
+        if not role:
+            perms = discord.Permissions.none() or discord.Permissions(read_messages=True, read_message_history=True)
+            role = await ctx.guild.create_role(name="Muted", permissions=perms, colour=discord.Colour(0x0062ff))
+        for member in members:
+            if role in member.roles:
+                await attempt_send(ctx, f'Member {member.name} ({member.id}) is already muted.')
+                continue
+            await member.add_roles(role)
+            await attempt_send(ctx, f'Member {member.name} ({member.id}) has been muted.')
+    
+    @commands.command(name="unmute",
+                      help="Unmute one or more user(s)",
+                      brief="Unmute people",
+                      usage="!unmute @Jacob @Wumpus")
+    @commands.has_permissions(moderate_members=True, manage_roles=True)
+    async def unmute(self,
+                   ctx: commands.Context,
+                   members: commands.Greedy[discord.Member] = commands.parameter(description="User(s) to unmute"),
+                   ) -> None:
+        role = discord.utils.get(ctx.guild.roles, name="Muted")
+        if not role:
+            await attempt_send(ctx, f'Cannot unmute a member when the Muted role does not exist yet.')
+        for member in members:
+            if role not in member.roles:
+                await attempt_send(ctx, f'Member {member.name} ({member.id}) does not have the Muted role.')
+                continue
+            await member.remove_roles(role)
+            await attempt_send(ctx, f'Member {member.name} ({member.id}) has been unmuted.')
+        
+    
     # Add cog check that simply calls the general_tasks utility function to check a few things
     async def cog_check(self,
                         ctx: commands.Context
