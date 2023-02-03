@@ -4,6 +4,7 @@ from os.path import join, dirname
 from dotenv import load_dotenv
 from os import getenv as ENV
 # Other import modules
+from pnwkit import *
 import pnwkit # PnW's Python API kit
 import math # Python's math library
 # My imports
@@ -269,7 +270,7 @@ def calc_manu_rev(nation_call: pnwkit.Result, resource: str) -> float:
 
 def market_info(resource: str) -> tuple[int, int]:
     print(resource)
-    return get_query(query_type = "market", resource = resource, buy_or_sell = "buy")[0], get_query(query_type = "market", resource = resource, buy_or_sell = "sell")[0]
+    return get_query(query_type = "market", resource = resource, buy_or_sell = "buy").trades[0].price, get_query(query_type = "market", resource = resource, buy_or_sell = "sell").trades[0].price
 
 
 ### The following code is modified code from the open source Rift project ###
@@ -330,17 +331,13 @@ def get_query(query_type: str = "general", nation_id: int = None, api_key: str =
             fallout_shelter
             """)
     elif query_type == "market":
-        GLOBAL = pnwkit.TradeType(0)
-        ORDER = pnwkit.OrderBy("RETURN_AMOUNT", pnwkit.Order.ASC if buy_or_sell == "sell" else pnwkit.Order.DESC)
-        print(GLOBAL)
-        print(ORDER)
         query = kit.query(
             "trades", {
-                "resource": resource,
+                "offer_resource": resource,
                 "buy_or_sell": buy_or_sell,
-                "type": GLOBAL,
                 "accepted": False,
-                "orderBy": pnwkit.OrderBy("price", pnwkit.Order.ASC if buy_or_sell == "sell" else pnwkit.Order.DESC)
+                "type": pnwkit.TradeType.GLOBAL,
+                "orderBy": pnwkit.OrderBy("return_amount", pnwkit.Order.ASC if buy_or_sell == "sell" else pnwkit.Order.DESC)
             },
             """
             price
@@ -494,7 +491,7 @@ def get_query(query_type: str = "general", nation_id: int = None, api_key: str =
                 """)
     try:
         result = query.get()
-        if query_type != "radiation" and query_type != "treasure" and len(result.nations) == 0:
+        if query_type not in ["radiation", "treasure", "market"] and len(result.nations) == 0:
             raise NoNationFoundException("No nation exists with that nation id.")
         return result
     except NoNationFoundException as inst:

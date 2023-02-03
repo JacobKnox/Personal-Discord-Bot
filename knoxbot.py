@@ -105,6 +105,7 @@ async def on_ready() -> None:
 async def on_command_error(ctx: commands.Context,
                            error: Exception
                            ) -> None:
+    #raise error
     # If the error is that the attempted command does not exist
     if isinstance(error, commands.CommandNotFound):
         # Send a message saying it doesn't exist
@@ -380,8 +381,7 @@ class PoliticsandWar(commands.Cog,
     @commands.command(name="pnwmarket",
                       help="Returns the lowest sell offer and highest buy offer for a given resource.",
                       brief="Returns market information for a resource.",
-                      usage="!pnwmarket resource",
-                      enabled=False)
+                      usage="!pnwmarket resource")
     async def market_info(self,
                           ctx: commands.Context,
                           resource: str = commands.parameter(description="Resource to get the market information for")
