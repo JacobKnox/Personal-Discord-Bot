@@ -316,7 +316,7 @@ class PoliticsandWar(commands.Cog,
                     embed = discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
                     await attempt_send(ctx, embed)
                     return
-            embed = discord.Embed(title="All Raw Resource Statistics", description="\n".join(f'{"**" + key.capitalize() + "**"}\nProduction: {value[1]: ,.2f}, Usage: {abs(value[2]): ,.2f}, Net: {value[0]: ,.2f}\n' for key, value in resources.items()), color=0xFF5733)
+            embed = discord.Embed(title="All Raw Resource Statistics", description="\n".join(f'{"**" + key.capitalize() + "**"}\nProduction: {value[1]: ,.2f}\nUsage: {abs(value[2]): ,.2f}\nNet: {value[0]: ,.2f}\n' for key, value in resources.items()), color=0xFF5733)
         else:
             try:
                 net, production, usage = pnw.calc_raw_rev(result, resource.lower())
@@ -349,13 +349,8 @@ class PoliticsandWar(commands.Cog,
         if resource.lower() == "all":
             resources = {"steel": None, "aluminum": None, "gasoline": None, "munitions": None}
             for resource in resources:
-                try:
-                    resources[resource] = pnw.calc_manu_rev(result, resource)
-                except InvalidResourceException as inst:
-                    embed = discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
-                    await attempt_send(ctx, embed)
-                    return
-            embed = discord.Embed(title="All Manufactured Resource Statistics", description="\n".join(f'{"**" + key.capitalize() + "**"}\nProduction: {value: ,.2f}, Usage: {0: ,.2f}, Net: {value: ,.2f}\n' for key, value in resources.items()), color=0xFF5733)
+                resources[resource] = pnw.calc_manu_rev(result, resource)
+            embed = discord.Embed(title="All Manufactured Resource Statistics", description="\n".join(f'{"**" + key.capitalize() + "**"}\nProduction: {value: ,.2f}\nUsage: {0: ,.2f}\nNet: {value: ,.2f}\n' for key, value in resources.items()), color=0xFF5733)
         else:
             try:
                 production = pnw.calc_manu_rev(result, resource.lower())
@@ -384,10 +379,21 @@ class PoliticsandWar(commands.Cog,
                       usage="!pnwmarket resource")
     async def market_info(self,
                           ctx: commands.Context,
-                          resource: str = commands.parameter(description="Resource to get the market information for")
+                          resource: str = commands.parameter(default="all", description="Resource to get the market information for")
                           ) -> None:
-        high_buy, low_sell = pnw.market_info(resource)
-        embed = discord.Embed(title=f'{resource.capitalize()} Market Information', description=f'Lowest Sell Offer: {low_sell}\nHighest Buy Offer: {high_buy}')
+        if resource.lower() == "all":
+            resources = {"food": None, "coal": None, "oil": None, "iron": None, "lead": None, "bauxite": None, "uranium": None, "steel": None, "aluminum": None, "gasoline": None, "munitions": None}
+            for resource in resources:
+                resources[resource] = pnw.market_info(resource)
+            embed = discord.Embed(title="All Market Information", description="\n".join(f'{"**" + key.capitalize() + "**"}\nLowest Sell Offer: {value[1]: ,d}\nHighest Buy Offer: {value[0]: ,d}\n' for key, value in resources.items()), color=0xFF5733)
+        else:
+            try:
+                high_buy, low_sell = pnw.market_info(resource)
+            except InvalidResourceException as inst:
+                    embed = discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
+                    await attempt_send(ctx, embed)
+                    return
+            embed = discord.Embed(title=f'{resource.capitalize()} Market Information', description=f'Lowest Sell Offer: {low_sell: ,d}\nHighest Buy Offer: {high_buy: ,d}')
         await attempt_send(ctx, embed)
 
 

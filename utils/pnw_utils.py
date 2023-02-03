@@ -18,7 +18,7 @@ load_dotenv(dotenv_path)
 API_KEY = ENV("PNW_API_KEY")
 if not API_KEY or API_KEY == '':
     raise NoKeyException("PNW_API_KEY")
-RESOURCES  = {
+CONTINENT_RSS  = {
     "af": ["oil", "bauxite", "uranium"],
     "an": ["oil", "coal", "uranium"],
     "as": ["oil", "iron", "uranium"],
@@ -28,6 +28,7 @@ RESOURCES  = {
     "sa": ["oil", "bauxite", "lead"]
 }
 POWER_RSS = ["oil", "coal", "uranium"]
+RSS = ["food", "coal", "oil", "iron", "lead", "bauxite", "uranium", "steel", "aluminum", "gasoline", "munitions"]
 
 # create a QueryKit with my API key to create queries
 kit = pnwkit.QueryKit(API_KEY)
@@ -197,7 +198,7 @@ def calc_raw_rev(nation_call: pnwkit.Result, resource: str) -> tuple[float, floa
     project = nation_info[resource][0]
     manu_used = nation_info[resource][1]
     project_mod = nation_info[resource][2]
-    if(nation.resource_production_center and resource in RESOURCES[nation.continent] and len(nation.cities) < 16):
+    if(nation.resource_production_center and resource in CONTINENT_RSS[nation.continent] and len(nation.cities) < 16):
         production += (math.ceil(min(len(nation.cities), 10) / 2)) * 12
     # loop over each city in the nation
     for city in nation.cities:
@@ -269,7 +270,8 @@ def calc_manu_rev(nation_call: pnwkit.Result, resource: str) -> float:
     return my_round(production)
 
 def market_info(resource: str) -> tuple[int, int]:
-    print(resource)
+    if resource not in RSS:
+        raise InvalidResourceException(resource)
     return get_query(query_type = "market", resource = resource, buy_or_sell = "buy").trades[0].price, get_query(query_type = "market", resource = resource, buy_or_sell = "sell").trades[0].price
 
 
