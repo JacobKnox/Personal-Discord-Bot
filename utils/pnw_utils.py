@@ -29,6 +29,11 @@ CONTINENT_RSS  = {
 }
 POWER_RSS = ["oil", "coal", "uranium"]
 RSS = ["food", "coal", "oil", "iron", "lead", "bauxite", "uranium", "steel", "aluminum", "gasoline", "munitions"]
+CITY_DISCOUNTS = {
+    "UP": 50000000,
+    "AUP": 100000000,
+    "MP": 150000000
+}
 
 # create a QueryKit with my API key to create queries
 kit = pnwkit.QueryKit(API_KEY)
@@ -120,15 +125,15 @@ def calc_city_cost(start_city: int, goal_city: int, nation_call: pnwkit.Result =
         city_cost = (50000 * ((city_num - 1) ** 3) + 150000 * city_num + 75000)
         # if the user has specified a nation
         if nation_call is not None:
-            # if the nation has Urban Planning project, apply it
-            if (nation_call.nations[0].urban_planning):
-                city_cost -= 50000000
-            # if the nation has Advanced Urban Planning project, apply it
-            if (nation_call.nations[0].advanced_urban_planning):
-                city_cost -= 100000000
-                # if the nation has Metropolitan Planning project, apply it
+            # if the nation has Metropolitan Planning project, apply it
             if (nation_call.nations[0].metropolitan_planning):
-                city_cost -= 150000000
+                city_cost -= (CITY_DISCOUNTS["MP"] + CITY_DISCOUNTS["AUP"] + CITY_DISCOUNTS["UP"])
+            # if the nation has Advanced Urban Planning project, apply it
+            elif (nation_call.nations[0].advanced_urban_planning):
+                city_cost -= (CITY_DISCOUNTS["AUP"] + CITY_DISCOUNTS["UP"])
+            # if the nation has Urban Planning project, apply it
+            elif (nation_call.nations[0].urban_planning):
+                city_cost -= CITY_DISCOUNTS["UP"]
             # if the nation's domestic policy is currently Manifest Destiny, apply it
             if (nation_call.nations[0].domestic_policy == pnwkit.data.DomesticPolicy(1)):
                 # if the nation has Government Support Agency project, then couple its effects with Manifest Destiny
@@ -151,10 +156,10 @@ def calc_infra_cost(current_infra: float, goal_infra: float, nation_call: pnwkit
         nation = nation_call.nations[0]
         if (infra_cost > 0):
             modifier = 1
-            if(nation.center_for_civil_engineering):
+            if(nation.advanced_engineering_corps):
+                modifier -= 0.1
+            elif(nation.center_for_civil_engineering):
                 modifier -= 0.05
-                if(nation.advanced_engineering_corps):
-                    modifier -= 0.05
             if (nation.domestic_policy == pnwkit.data.DomesticPolicy(5) and nation.government_support_agency):
                 modifier -= 0.075
             elif (nation.domestic_policy == pnwkit.data.DomesticPolicy(5)):
@@ -168,10 +173,10 @@ def calc_land_cost(current_land: float, goal_land: float, nation_call: pnwkit.Re
         nation = nation_call.nations[0]
         if (land_cost > 0):
             modifier = 1
-            if(nation.arable_land_agency):
+            if(nation.advanced_engineering_corps):
+                modifier -= 0.1
+            elif(nation.arable_land_agency):
                 modifier -= 0.05
-                if(nation.advanced_engineering_corps):
-                    modifier -= 0.05
             if (nation.domestic_policy == pnwkit.data.DomesticPolicy(6) and nation.government_support_agency):
                 modifier -= 0.075
             elif (nation.domestic_policy == pnwkit.data.DomesticPolicy(6)):
