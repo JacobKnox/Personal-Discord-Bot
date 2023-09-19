@@ -5,11 +5,11 @@ from dotenv import load_dotenv
 from os import getenv as ENV
 # Other import modules
 from pnwkit import *
-import pnwkit # PnW's Python API kit
-import math # Python's math library
+import pnwkit  # PnW's Python API kit
+import math  # Python's math library
 # My imports
-from utils.utils import * # general utility functions
-from exceptions import * # custom exceptions
+from utils.utils import *  # general utility functions
+from exceptions import *  # custom exceptions
 
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
@@ -18,7 +18,7 @@ load_dotenv(dotenv_path)
 API_KEY = ENV("PNW_API_KEY")
 if not API_KEY or API_KEY == '':
     raise NoKeyException("PNW_API_KEY")
-CONTINENT_RSS  = {
+CONTINENT_RSS = {
     "af": ["oil", "bauxite", "uranium"],
     "an": ["oil", "coal", "uranium"],
     "as": ["oil", "iron", "uranium"],
@@ -28,7 +28,8 @@ CONTINENT_RSS  = {
     "sa": ["oil", "bauxite", "lead"]
 }
 POWER_RSS = ["oil", "coal", "uranium"]
-RSS = ["food", "coal", "oil", "iron", "lead", "bauxite", "uranium", "steel", "aluminum", "gasoline", "munitions"]
+RSS = ["food", "coal", "oil", "iron", "lead", "bauxite",
+       "uranium", "steel", "aluminum", "gasoline", "munitions"]
 CITY_DISCOUNTS = {
     "UP": 50000000,
     "AUP": 100000000,
@@ -57,12 +58,12 @@ def calc_food_rev(api_result: pnwkit.Result) -> tuple[float, float, float]:
         "sa": radiation_result.game_info.radiation.south_america
     }
     month = radiation_result.game_info.game_date.month
-    
+
     # intialize the food_usage variable with the usage from population
     food_usage = nation.population / 1000
     # merge the wars lists into one list
     wars = nation.defensive_wars + nation.offensive_wars
-    if(sum([war.turns_left > 0 for war in wars]) > 0):
+    if (sum([war.turns_left > 0 for war in wars]) > 0):
         # add the usage from soldiers in wartime
         food_usage += nation.soldiers / 500
     else:
@@ -75,9 +76,11 @@ def calc_food_rev(api_result: pnwkit.Result) -> tuple[float, float, float]:
         # initialize the city_production variable for that city to 0
         city_production = 0
         # set the production to the number of farms multiplied by the land divided by 500 (default production) minus 100 if they have Mass Irrigation
-        city_production = city.farm * 12 * (city.land / (500 - 100 * nation.massirr))
+        city_production = city.farm * 12 * \
+            (city.land / (500 - 100 * nation.massirr))
         # apply the production bonus
-        city_production *= 1 + max(my_round((city.farm - 1) * 0.0263157894737), 0)
+        city_production *= 1 + \
+            max(my_round((city.farm - 1) * 0.0263157894737), 0)
         # add the current city's production to the nation's total production
         food_production += city_production
     # the seasonal affect on food production (need to check what continent and season the nation is on)
@@ -91,7 +94,7 @@ def calc_food_rev(api_result: pnwkit.Result) -> tuple[float, float, float]:
         if (month > 5 and month < 9):
             season_affect = 1.2
         # winter
-        elif(month > 11 or month < 3):
+        elif (month > 11 or month < 3):
             season_affect = 0.8
     # if they're on South America, Africa, or Australia
     elif (continent in ["sa", "af", "au"]):
@@ -99,14 +102,15 @@ def calc_food_rev(api_result: pnwkit.Result) -> tuple[float, float, float]:
         if (month > 5 and month < 9):
             season_affect = 0.8
         # summer
-        elif(month > 11 or month < 3):
+        elif (month > 11 or month < 3):
             season_affect = 1.2
     # if they're on Antarctica
     else:
         # Antarctica is unaffected by season, but gets a permanent -50% food production
         season_affect = 0.5
     # calculate the radiation factor on food production
-    radiation_factor = max(1 - ((continent_radiation + radiation_result.game_info.radiation.global_) / 1000), nation.fallout_shelter * 0.1)
+    radiation_factor = max(
+        1 - ((continent_radiation + radiation_result.game_info.radiation.global_) / 1000), nation.fallout_shelter * 0.1)
     # apply the seasonal and radiation factors to the total production
     food_production *= season_affect * radiation_factor
     # return the difference between the food_production and food_usage to determine net food revenue
@@ -127,7 +131,8 @@ def calc_city_cost(start_city: int, goal_city: int, nation_call: pnwkit.Result =
         if nation_call is not None:
             # if the nation has Metropolitan Planning project, apply it
             if (nation_call.nations[0].metropolitan_planning):
-                city_cost -= (CITY_DISCOUNTS["MP"] + CITY_DISCOUNTS["AUP"] + CITY_DISCOUNTS["UP"])
+                city_cost -= (CITY_DISCOUNTS["MP"] +
+                              CITY_DISCOUNTS["AUP"] + CITY_DISCOUNTS["UP"])
             # if the nation has Advanced Urban Planning project, apply it
             elif (nation_call.nations[0].advanced_urban_planning):
                 city_cost -= (CITY_DISCOUNTS["AUP"] + CITY_DISCOUNTS["UP"])
@@ -156,9 +161,9 @@ def calc_infra_cost(current_infra: float, goal_infra: float, nation_call: pnwkit
         nation = nation_call.nations[0]
         if (infra_cost > 0):
             modifier = 1
-            if(nation.advanced_engineering_corps):
+            if (nation.advanced_engineering_corps):
                 modifier -= 0.1
-            elif(nation.center_for_civil_engineering):
+            elif (nation.center_for_civil_engineering):
                 modifier -= 0.05
             if (nation.domestic_policy == pnwkit.data.DomesticPolicy(5) and nation.government_support_agency):
                 modifier -= 0.075
@@ -167,15 +172,16 @@ def calc_infra_cost(current_infra: float, goal_infra: float, nation_call: pnwkit
             infra_cost *= modifier
     return my_round(infra_cost)
 
+
 def calc_land_cost(current_land: float, goal_land: float, nation_call: pnwkit.Result = None) -> float:
     land_cost = calculate_land_value(current_land, goal_land)
     if nation_call is not None:
         nation = nation_call.nations[0]
         if (land_cost > 0):
             modifier = 1
-            if(nation.advanced_engineering_corps):
+            if (nation.advanced_engineering_corps):
                 modifier -= 0.1
-            elif(nation.arable_land_agency):
+            elif (nation.arable_land_agency):
                 modifier -= 0.05
             if (nation.domestic_policy == pnwkit.data.DomesticPolicy(6) and nation.government_support_agency):
                 modifier -= 0.075
@@ -183,6 +189,7 @@ def calc_land_cost(current_land: float, goal_land: float, nation_call: pnwkit.Re
                 modifier -= 0.05
             land_cost *= modifier
     return my_round(land_cost)
+
 
 def calc_raw_rev(nation_call: pnwkit.Result, resource: str) -> tuple[float, float, float]:
     nation = nation_call.nations[0]
@@ -198,12 +205,12 @@ def calc_raw_rev(nation_call: pnwkit.Result, resource: str) -> tuple[float, floa
         'lead': [nation.arms_stockpile, 6, 0.34],
         'uranium': [nation.uranium_enrichment_program, 0, 0]
     }
-    if(resource not in nation_info.keys()):
+    if (resource not in nation_info.keys()):
         raise InvalidResourceException(resource)
     project = nation_info[resource][0]
     manu_used = nation_info[resource][1]
     project_mod = nation_info[resource][2]
-    if(nation.resource_production_center and resource in CONTINENT_RSS[nation.continent] and len(nation.cities) < 16):
+    if (nation.resource_production_center and resource in CONTINENT_RSS[nation.continent] and len(nation.cities) < 16):
         production += (math.ceil(min(len(nation.cities), 10) / 2)) * 12
     # loop over each city in the nation
     for city in nation.cities:
@@ -223,15 +230,18 @@ def calc_raw_rev(nation_call: pnwkit.Result, resource: str) -> tuple[float, floa
         # number of power plants in the city
         power = info[resource][2]
         city_production = raw_improvement * 3
-        if(resource == 'uranium'):
-            city_production *= (1 + project) * (1 + max(my_round((raw_improvement - 1) * 0.125), 0))
+        if (resource == 'uranium'):
+            city_production *= (1 + project) * (1 +
+                                                max(my_round((raw_improvement - 1) * 0.125), 0))
         else:
-            city_production *= (1 + max(my_round((raw_improvement - 1) * 0.05555555555), 0))
+            city_production *= (1 +
+                                max(my_round((raw_improvement - 1) * 0.05555555555), 0))
         production += city_production
         city_mill = manu_improvement * manu_used
-        city_mill *= (1 + max(my_round((manu_improvement - 1) * 0.125), 0)) * (1 + project * project_mod)
+        city_mill *= (1 + max(my_round((manu_improvement - 1) *
+                      0.125), 0)) * (1 + project * project_mod)
         mill_usage += city_mill
-        if(resource == 'uranium'):
+        if (resource == 'uranium'):
             power_infra = 2000
             infra_per = 1000
         else:
@@ -248,6 +258,7 @@ def calc_raw_rev(nation_call: pnwkit.Result, resource: str) -> tuple[float, floa
                     temp_infra = 0
     return my_round(production - mill_usage - power_usage), my_round(production), my_round(mill_usage + power_usage)
 
+
 def calc_manu_rev(nation_call: pnwkit.Result, resource: str) -> float:
     nation = nation_call.nations[0]
     production = 0
@@ -257,7 +268,7 @@ def calc_manu_rev(nation_call: pnwkit.Result, resource: str) -> float:
         'gasoline': [nation.emergency_gasoline_reserve, 6, 2, 0.34],
         'munitions': [nation.arms_stockpile, 18, 1]
     }
-    if(resource not in nation_info.keys()):
+    if (resource not in nation_info.keys()):
         raise InvalidResourceException(resource)
     project = nation_info[resource][0]
     generated = nation_info[resource][1]
@@ -271,19 +282,23 @@ def calc_manu_rev(nation_call: pnwkit.Result, resource: str) -> float:
         }
         if city.powered:
             improvement = city_info[resource]
-            production += improvement * generated * (1 + max(my_round((improvement - 1) * 0.125), 0)) * (1 + project * project_mod)
+            production += improvement * generated * \
+                (1 + max(my_round((improvement - 1) * 0.125), 0)) * \
+                (1 + project * project_mod)
     return my_round(production)
+
 
 def market_info(resource: str) -> tuple[int, int]:
     if resource not in RSS:
         raise InvalidResourceException(resource)
-    return get_query(query_type = "market", resource = resource, buy_or_sell = "buy").trades[0].price, get_query(query_type = "market", resource = resource, buy_or_sell = "sell").trades[0].price
+    return get_query(query_type="market", resource=resource, buy_or_sell="buy").trades[0].price, get_query(query_type="market", resource=resource, buy_or_sell="sell").trades[0].price
 
 
 ### The following code is modified code from the open source Rift project ###
 ### (https://github.com/mrvillage/rift/blob/master/bot/src/funcs/tools.py) ###
 def infrastructure_price(amount: float, /) -> float:
     return ((abs(amount - 10) ** 2.2) / 710) + 300
+
 
 def calculate_infrastructure_value(start: float, end: float, /) -> float:
     start = my_round(start)
@@ -296,8 +311,10 @@ def calculate_infrastructure_value(start: float, end: float, /) -> float:
         return chunk * (difference % 100) + calculate_infrastructure_value(start + difference % 100, end)
     return chunk * difference
 
+
 def land_price(amount: float, /) -> float:
     return (0.002 * (amount - 20) * (amount - 20)) + 50
+
 
 def calculate_land_value(start: float, end: float) -> float:
     start = my_round(start)
@@ -310,6 +327,7 @@ def calculate_land_value(start: float, end: float) -> float:
         return chunk * (difference % 500) + calculate_land_value(start + difference % 500, end)
     return chunk * difference
 ### End of code from Rift ###
+
 
 def get_query(query_type: str = "general", nation_id: int = None, api_key: str = API_KEY, resource: str = None, buy_or_sell: str = None) -> pnwkit.Result:
     if query_type == "food":
@@ -368,11 +386,11 @@ def get_query(query_type: str = "general", nation_id: int = None, api_key: str =
             """)
     elif query_type == "infraland":
         query = kit.query(
-                "nations", {
-                    "id": nation_id,
-                    "first": 1
-                },
-                """
+            "nations", {
+                "id": nation_id,
+                "first": 1
+            },
+            """
                 domestic_policy
                 nation_name
                 government_support_agency
@@ -429,7 +447,7 @@ def get_query(query_type: str = "general", nation_id: int = None, api_key: str =
             uranium_enrichment_program
             """)
     elif query_type == "treasure":
-        query = kit.query("treasures", {},"""
+        query = kit.query("treasures", {}, """
                 name,
                 color,
                 continent,
@@ -441,10 +459,10 @@ def get_query(query_type: str = "general", nation_id: int = None, api_key: str =
     elif query_type == "my_info":
         if api_key == API_KEY:
             query = kit.query(
-                    "nations", {
-                        "id": nation_id,
-                        "first": 1
-                    }, """
+                "nations", {
+                    "id": nation_id,
+                    "first": 1
+                }, """
                     soldiers
                     tanks
                     aircraft
@@ -453,10 +471,10 @@ def get_query(query_type: str = "general", nation_id: int = None, api_key: str =
         else:
             temp_kit = pnwkit.QueryKit(api_key)
             query = temp_kit.query(
-                    "nations", {
-                        "id": nation_id,
-                        "first": 1
-                    }, """
+                "nations", {
+                    "id": nation_id,
+                    "first": 1
+                }, """
                     soldiers
                     tanks
                     aircraft
@@ -464,10 +482,10 @@ def get_query(query_type: str = "general", nation_id: int = None, api_key: str =
                     """)
     else:
         query = kit.query(
-                "nations", {
-                    "id": nation_id,
-                    "first": 1
-                }, """
+            "nations", {
+                "id": nation_id,
+                "first": 1
+            }, """
                 population
                 soldiers
                 continent
@@ -499,12 +517,14 @@ def get_query(query_type: str = "general", nation_id: int = None, api_key: str =
     try:
         result = query.get()
         if query_type not in ["radiation", "treasure", "market"] and len(result.nations) == 0:
-            raise NoNationFoundException("No nation exists with that nation id.")
+            raise NoNationFoundException(
+                "No nation exists with that nation id.")
         return result
     except NoNationFoundException as inst:
         raise inst
-    #except Exception as inst:
+    # except Exception as inst:
     #    raise GeneralException(inst)
-        
+
+
 # "Test" API call to get a bunch of information
-general_query = get_query(nation_id = 244934)
+general_query = get_query(nation_id=244934)

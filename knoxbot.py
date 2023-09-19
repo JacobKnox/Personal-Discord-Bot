@@ -1,8 +1,8 @@
 # Python imports
-import time # time library
-import os # os, mainly used to restart the bot
-import sys # sys, mainly used to exit the program when shutting the bot off
-import typing # typing, mainly used for command parameters
+import time  # time library
+import os  # os, mainly used to restart the bot
+import sys  # sys, mainly used to exit the program when shutting the bot off
+import typing  # typing, mainly used for command parameters
 # ENV related imports
 from dotenv import load_dotenv
 from os import getenv as ENV
@@ -12,11 +12,11 @@ from os.path import join, dirname
 import discord
 from discord.ext import commands
 # Importing my utility files
-import utils.pnw_utils as pnw # pnw utility functions
-from utils.utils import * # general utility functions
-from exceptions import * # custom exceptions
+import utils.pnw_utils as pnw  # pnw utility functions
+from utils.utils import *  # general utility functions
+from exceptions import *  # custom exceptions
 
-#Initialize the bot with a set prefix of ! and all possible Intents
+# Initialize the bot with a set prefix of ! and all possible Intents
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 
 errors: list[Exception] = []
@@ -51,17 +51,11 @@ except TypeError as inst:
 start_time = 0
 
 
-
-
-
 ##############
 #            #
 # BOT EVENTS #
 #            #
 ##############
-
-
-
 
 
 # Event for when the bot is ready
@@ -101,45 +95,55 @@ async def on_ready() -> None:
     print("Bot is ready to use!")
 
 # Event for when a command error occurs
+
+
 @bot.event
 async def on_command_error(ctx: commands.Context,
                            error: Exception
                            ) -> None:
-    #raise error
+    # raise error
     # If the error is that the attempted command does not exist
     if isinstance(error, commands.CommandNotFound):
         # Send a message saying it doesn't exist
-        embed = discord.Embed(title="Command Not Found", description=f"The command you attempted to use, {ctx.message.content}, does not currently exist.", color=0xFF5733)
+        embed = discord.Embed(title="Command Not Found",
+                              description=f"The command you attempted to use, {ctx.message.content}, does not currently exist.", color=0xFF5733)
         await attempt_send(ctx, embed)
         # Log that the user attempted to use this fictional command
-        ERROR_LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use non-existent command: {ctx.message.content}\n')
+        ERROR_LOG.write(
+            f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use non-existent command: {ctx.message.content}\n')
         ERROR_LOG.flush()
         return
     # If the error is that they attempted to use a command without all of the required arguments
     elif isinstance(error, commands.MissingRequiredArgument):
         # Send a message saying the user missed required arguments
         cmd = bot.get_command(str(ctx.command))
-        embed = discord.Embed(title="Missing Argument(s)", description=f"Command usage:\n{cmd.usage}", color=0xFF5733)
+        embed = discord.Embed(title="Missing Argument(s)",
+                              description=f"Command usage:\n{cmd.usage}", color=0xFF5733)
         await attempt_send(ctx, embed)
         # Log that the user attempted to use the command without the required arguments
-        ERROR_LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) improperly used command: {ctx.command}\n')
+        ERROR_LOG.write(
+            f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) improperly used command: {ctx.command}\n')
         ERROR_LOG.flush()
         return
     elif isinstance(error, commands.BadArgument):
         # Send a message saying the user used a bad argument
         cmd = bot.get_command(str(ctx.command))
-        embed = discord.Embed(title="Bad Argument(s)", description=f"Command usage:\n{cmd.usage}", color=0xFF5733)
+        embed = discord.Embed(
+            title="Bad Argument(s)", description=f"Command usage:\n{cmd.usage}", color=0xFF5733)
         await attempt_send(ctx, embed)
         # Log that the user attempted to use the command without the required arguments
-        ERROR_LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) improperly used command: {ctx.command}\n')
+        ERROR_LOG.write(
+            f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) improperly used command: {ctx.command}\n')
         ERROR_LOG.flush()
         return
     elif isinstance(error, commands.DisabledCommand):
         # Send a message saying the user used attempted to use a disabled command
-        embed = discord.Embed(title="Disabled Command", description=f"The command {ctx.command} is currently disabled.", color=0xFF5733)
+        embed = discord.Embed(
+            title="Disabled Command", description=f"The command {ctx.command} is currently disabled.", color=0xFF5733)
         await attempt_send(ctx, embed)
         # Log that the user attempted to use the disabled command
-        ERROR_LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use disabled command: {ctx.command}\n')
+        ERROR_LOG.write(
+            f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use disabled command: {ctx.command}\n')
         ERROR_LOG.flush()
         return
     elif isinstance(error, commands.CommandInvokeError):
@@ -147,9 +151,11 @@ async def on_command_error(ctx: commands.Context,
         # Send a message saying something went wrong when the user attempted to use the command
         if "Command raised an exception: " in error.args[0]:
             flag = True
-            embed = discord.Embed(title="Error in Command Invocation", description=f"Something went wrong when you used the command {ctx.command}\n{error.args[0][29:]}", color=0xFF5733)
+            embed = discord.Embed(title="Error in Command Invocation",
+                                  description=f"Something went wrong when you used the command {ctx.command}\n{error.args[0][29:]}", color=0xFF5733)
         else:
-            embed = discord.Embed(title="Error in Command Invocation", description=f"Something went wrong when you used the command {ctx.command}. The information has been sent to the owner.", color=0xFF5733)
+            embed = discord.Embed(title="Error in Command Invocation",
+                                  description=f"Something went wrong when you used the command {ctx.command}. The information has been sent to the owner.", color=0xFF5733)
         await attempt_send(ctx, embed)
         # Log that something went wrong
         ERROR_LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use the command: {ctx.command} and got errors: {", ".join(error.args)}\n')
@@ -157,7 +163,8 @@ async def on_command_error(ctx: commands.Context,
         if flag:
             return
     elif isinstance(error, commands.MissingPermissions):
-        embed = discord.Embed(title=f'{error.__class__.__name__}', description=f'{", ".join(error.args)}')
+        embed = discord.Embed(
+            title=f'{error.__class__.__name__}', description=f'{", ".join(error.args)}')
         await attempt_send(ctx, embed)
         return
     elif isinstance(error, commands.CheckFailure):
@@ -168,10 +175,7 @@ async def on_command_error(ctx: commands.Context,
     # Log the error
     ERROR_LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) caused error {error.__class__.__name__} ({", ".join(error.args)}) with message {ctx.message.content}.\n')
     ERROR_LOG.flush()
-    #raise error
-
-
-
+    # raise error
 
 
 #############################
@@ -186,7 +190,6 @@ class PoliticsandWar(commands.Cog,
     # CALCULATION COMMANDS #
     ########################
 
-
     # Add a command to calculate the cost of infrastructure
     @commands.command(name='pnwinfra',
                       help="Calculates the cost to go from one level of infrastructure to another, optionally for a specific nation.",
@@ -194,46 +197,56 @@ class PoliticsandWar(commands.Cog,
                       usage="!pnwinfra start end (nation_id)")
     async def calc_infra(self,
                          ctx: commands.Context,
-                         start: float = commands.parameter(description="Starting infrastructure level"),
-                         end: float = commands.parameter(description="Ending instrastructure level"),
-                         nation_id: typing.Optional[int] = commands.parameter(default=None, description="ID of the nation to calculate for")
+                         start: float = commands.parameter(
+                             description="Starting infrastructure level"),
+                         end: float = commands.parameter(
+                             description="Ending instrastructure level"),
+                         nation_id: typing.Optional[int] = commands.parameter(
+                             default=None, description="ID of the nation to calculate for")
                          ) -> None:
         # If the nation_id (an optional parameter) is not set, then calculate the value without their specific info
         if nation_id is None:
             infra_cost = pnw.calculate_infrastructure_value(start, end)
-            embed = discord.Embed(title="Calculate Infrastructure Cost", description=f'The cost to go from {start} to {end} is:\n${infra_cost: ,.2f}', color=0xFF5733)
+            embed = discord.Embed(title="Calculate Infrastructure Cost",
+                                  description=f'The cost to go from {start} to {end} is:\n${infra_cost: ,.2f}', color=0xFF5733)
         # Otherwise, calculate it with their specific info
         else:
             # Get the infra query result
             result = pnw.get_query("infraland", nation_id)
             infra_cost = pnw.calc_infra_cost(start, end, result)
-            embed = discord.Embed(title="Calculate Infrastructure Cost", description=f'The cost to go from {start} to {end} for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}) is:\n${infra_cost: ,.2f}', color=0xFF5733)
+            embed = discord.Embed(title="Calculate Infrastructure Cost",
+                                  description=f'The cost to go from {start} to {end} for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}) is:\n${infra_cost: ,.2f}', color=0xFF5733)
         # Log the command usage and send the created embed
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwinfra command.\n')
         LOG.flush()
         await attempt_send(ctx, embed)
-        
+
     # Add a command to calculate the cost of infrastructure
     @commands.command(name='pnwland',
                       help="Calculates the cost to go from one level of land to another, optionally for a specific nation.",
                       brief="Calculates cost of land.",
                       usage="!pnwland start end (nation_id)")
     async def calc_land(self,
-                        ctx: commands.Context, 
-                        start: float = commands.parameter(description="Starting land level"),
-                        end: float = commands.parameter(description="Ending land level"),
-                        nation_id: typing.Optional[int] = commands.parameter(default=None, description="ID of the nation to calculate for")
+                        ctx: commands.Context,
+                        start: float = commands.parameter(
+                            description="Starting land level"),
+                        end: float = commands.parameter(
+                            description="Ending land level"),
+                        nation_id: typing.Optional[int] = commands.parameter(
+                            default=None, description="ID of the nation to calculate for")
                         ) -> None:
         # If the nation_id (an optional parameter) is not set, then calculate the value without their specific info
         if nation_id is None:
             land_cost = pnw.calculate_land_value(start, end)
-            embed = discord.Embed(title="Calculate Land Cost", description=f'The cost to go from {start} to {end} is:\n${land_cost: ,.2f}', color=0xFF5733)
+            embed = discord.Embed(
+                title="Calculate Land Cost", description=f'The cost to go from {start} to {end} is:\n${land_cost: ,.2f}', color=0xFF5733)
         # Otherwise, calculate it with their specific info
         else:
             # Get the infra query result
             result = pnw.get_query("infraland", nation_id)
             land_cost = pnw.calc_land_cost(start, end, result)
-            embed = discord.Embed(title="Calculate Land Cost", description=f'The cost to go from {start} to {end} for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}) is:\n${land_cost: ,.2f}', color=0xFF5733)
+            embed = discord.Embed(
+                title="Calculate Land Cost", description=f'The cost to go from {start} to {end} for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}) is:\n${land_cost: ,.2f}', color=0xFF5733)
         # Log the command usage and send the created embed
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwland command.\n')
         LOG.flush()
@@ -246,51 +259,57 @@ class PoliticsandWar(commands.Cog,
                       usage="!pnwcity start end (nation_id)")
     async def calc_city(self,
                         ctx: commands.Context,
-                        start: int = commands.parameter(description="Starting city level"),
-                        end: int = commands.parameter(description="Ending city level"),
-                        nation_id: typing.Optional[int] = commands.parameter(default=None, description="ID of the nation to calculate for")
+                        start: int = commands.parameter(
+                            description="Starting city level"),
+                        end: int = commands.parameter(
+                            description="Ending city level"),
+                        nation_id: typing.Optional[int] = commands.parameter(
+                            default=None, description="ID of the nation to calculate for")
                         ) -> None:
         # If the nation_id (an optional parameter) is not set, then calculate the value without their specific info
         if nation_id is None:
             city_cost = pnw.calc_city_cost(start, end)
-            embed = discord.Embed(title="Calculate City Cost", description=f'The cost to go from {start} to {end} is:\n${city_cost: ,.2f}', color=0xFF5733)
+            embed = discord.Embed(
+                title="Calculate City Cost", description=f'The cost to go from {start} to {end} is:\n${city_cost: ,.2f}', color=0xFF5733)
         # Otherwise, calculate it with their specific info
         else:
             # Get the city query result
             result = pnw.get_query("city", nation_id)
             city_cost = pnw.calc_city_cost(start, end, result)
-            embed = discord.Embed(title="Calculate City Cost", description=f'The cost to go from {start} to {end} for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}) is:\n${city_cost: ,.2f}', color=0xFF5733)
+            embed = discord.Embed(
+                title="Calculate City Cost", description=f'The cost to go from {start} to {end} for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}) is:\n${city_cost: ,.2f}', color=0xFF5733)
         # Log the command usage and send the created embed
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwcity command.\n')
         LOG.flush()
         await attempt_send(ctx, embed)
 
-
     ####################
     # REVENUE COMMANDS #
     ####################
 
-
     # Add a command to calculate food revenue (usage, production, and net revenue) of a nation
     # Users may find a very small margin of error. This is being attributed to constantly fluctuating radiation in Orbis.
+
     @commands.command(name="pnwfood",
                       help="Calculates the food usage, production, and net revenue for a nation.",
                       brief="Calculates food stats for a nation.",
                       usage="!pnwfood nation_id")
     async def calc_food(self,
                         ctx: commands.Context,
-                        nation_id: int = commands.parameter(description="ID of the nation to calculate for")
+                        nation_id: int = commands.parameter(
+                            description="ID of the nation to calculate for")
                         ) -> None:
         # Get the food query result
         result = pnw.get_query("food", nation_id)
         # Call the food calculation function
         net_food, food_production, food_usage = pnw.calc_food_rev(result)
-        embed = discord.Embed(title="Food Statistics", description=f'Statistics about food revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(food_production): ,.2f}\nUsage: {food_usage: ,.2f}\nNet: {net_food: ,.2f}', color=0xFF5733)
+        embed = discord.Embed(
+            title="Food Statistics", description=f'Statistics about food revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(food_production): ,.2f}\nUsage: {food_usage: ,.2f}\nNet: {net_food: ,.2f}', color=0xFF5733)
         # Log the command usage and send the created embed
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwfood command with id {nation_id}.\n')
         LOG.flush()
         await attempt_send(ctx, embed)
-        
+
     # Add a command to calculate revenue (usage, production, and net revenue) for any raw resource of a nation
     @commands.command(name="pnwraw",
                       help="Calculates the raw's usage, production, and net revenue for a nation.",
@@ -298,8 +317,10 @@ class PoliticsandWar(commands.Cog,
                       usage="!pnwraw nation_id resource")
     async def calc_raw(self,
                        ctx: commands.Context,
-                       nation_id: int = commands.parameter(description="ID of the nation to calculate for"),
-                       resource: str = commands.parameter(default="all", description="Raw resource to calculate the revenue for")
+                       nation_id: int = commands.parameter(
+                           description="ID of the nation to calculate for"),
+                       resource: str = commands.parameter(
+                           default="all", description="Raw resource to calculate the revenue for")
                        ) -> None:
         # Do anything we need to related to resources
         # May get rid of utility function unless I need it for manufactured command and others
@@ -308,28 +329,34 @@ class PoliticsandWar(commands.Cog,
             return
         # Call the calculation function
         if resource.lower() == "all":
-            resources = {"coal": None, "oil": None, "iron": None, "lead": None, "bauxite": None, "uranium": None}
+            resources = {"coal": None, "oil": None, "iron": None,
+                         "lead": None, "bauxite": None, "uranium": None}
             for resource in resources:
                 try:
                     resources[resource] = pnw.calc_raw_rev(result, resource)
                 except InvalidResourceException as inst:
-                    embed = discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
+                    embed = discord.Embed(
+                        title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
                     await attempt_send(ctx, embed)
                     return
-            embed = discord.Embed(title="All Raw Resource Statistics", description="\n".join(f'{"**" + key.capitalize() + "**"}\nProduction: {value[1]: ,.2f}\nUsage: {abs(value[2]): ,.2f}\nNet: {value[0]: ,.2f}\n' for key, value in resources.items()), color=0xFF5733)
+            embed = discord.Embed(title="All Raw Resource Statistics", description="\n".join(
+                f'{"**" + key.capitalize() + "**"}\nProduction: {value[1]: ,.2f}\nUsage: {abs(value[2]): ,.2f}\nNet: {value[0]: ,.2f}\n' for key, value in resources.items()), color=0xFF5733)
         else:
             try:
-                net, production, usage = pnw.calc_raw_rev(result, resource.lower())
+                net, production, usage = pnw.calc_raw_rev(
+                    result, resource.lower())
             except InvalidResourceException as inst:
-                embed = discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
+                embed = discord.Embed(
+                    title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
                 await attempt_send(ctx, embed)
                 return
-            embed = discord.Embed(title=f"{resource.capitalize()} Statistics", description=f'Statistics about {resource.lower()} revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(production): ,.2f}\nUsage: {usage: ,.2f}\nNet: {net: ,.2f}', color=0xFF5733)
+            embed = discord.Embed(title=f"{resource.capitalize()} Statistics",
+                                  description=f'Statistics about {resource.lower()} revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {abs(production): ,.2f}\nUsage: {usage: ,.2f}\nNet: {net: ,.2f}', color=0xFF5733)
         # Log the command usage and send the generated embed
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwraw command with id {nation_id} and resource {resource.lower()}.\n')
         LOG.flush()
         await attempt_send(ctx, embed)
-        
+
     # Add a command to calculate revenue (usage, production, and net revenue) for any manufactured resource of a nation
     @commands.command(name="pnwmanu",
                       help="Calculates the manufactured's usage, production, and net revenue for a nation.",
@@ -337,8 +364,10 @@ class PoliticsandWar(commands.Cog,
                       usage="!pnwmanu nation_id resource")
     async def calc_manu(self,
                         ctx: commands.Context,
-                        nation_id: int = commands.parameter(description="ID of the nation to calculate for"),
-                        resource: str = commands.parameter(default="all", description="Manufactured resource to calculate the revenue for")
+                        nation_id: int = commands.parameter(
+                            description="ID of the nation to calculate for"),
+                        resource: str = commands.parameter(
+                            default="all", description="Manufactured resource to calculate the revenue for")
                         ) -> None:
         # Do anything we need to related to resources
         # May get rid of utility function unless I need it for manufactured command and others
@@ -347,92 +376,103 @@ class PoliticsandWar(commands.Cog,
             return
         # Call the calculation function
         if resource.lower() == "all":
-            resources = {"steel": None, "aluminum": None, "gasoline": None, "munitions": None}
+            resources = {"steel": None, "aluminum": None,
+                         "gasoline": None, "munitions": None}
             for resource in resources:
                 resources[resource] = pnw.calc_manu_rev(result, resource)
-            embed = discord.Embed(title="All Manufactured Resource Statistics", description="\n".join(f'{"**" + key.capitalize() + "**"}\nProduction: {value: ,.2f}\nUsage: {0: ,.2f}\nNet: {value: ,.2f}\n' for key, value in resources.items()), color=0xFF5733)
+            embed = discord.Embed(title="All Manufactured Resource Statistics", description="\n".join(
+                f'{"**" + key.capitalize() + "**"}\nProduction: {value: ,.2f}\nUsage: {0: ,.2f}\nNet: {value: ,.2f}\n' for key, value in resources.items()), color=0xFF5733)
         else:
             try:
                 production = pnw.calc_manu_rev(result, resource.lower())
             except InvalidResourceException as inst:
-                embed = discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
+                embed = discord.Embed(
+                    title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
                 await attempt_send(ctx, embed)
                 return
-            embed = discord.Embed(title=f"{resource.capitalize()} Statistics", description=f'Statistics about {resource.lower()} revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {production: ,.2f}\nUsage: {0: ,.2f}\nNet: {production: ,.2f}', color=0xFF5733)
+            embed = discord.Embed(title=f"{resource.capitalize()} Statistics",
+                                  description=f'Statistics about {resource.lower()} revenue for [{result.nations[0].nation_name}](https://politicsandwar.com/nation/id={nation_id}):\nProduction: {production: ,.2f}\nUsage: {0: ,.2f}\nNet: {production: ,.2f}', color=0xFF5733)
         # Log the command usage and send the generated embed
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !pnwmanu command with id {nation_id} and resource {resource.lower()}.\n')
         LOG.flush()
         await attempt_send(ctx, embed)
-        
+
     @commands.command(name="treasures",
                       enabled=False)
     async def treasures(self,
                         ctx):
         result = pnw.get_query("treasure")
-        greens = [treasure for treasure in result.treasures if (treasure.color == "green" or treasure.color == "any")]
+        greens = [treasure for treasure in result.treasures if (
+            treasure.color == "green" or treasure.color == "any")]
         for treasure in greens:
             print(treasure.color)
-    
+
     @commands.command(name="pnwmarket",
                       help="Returns the lowest sell offer and highest buy offer for a given resource.",
                       brief="Returns market information for a resource.",
                       usage="!pnwmarket resource")
     async def market_info(self,
                           ctx: commands.Context,
-                          resource: str = commands.parameter(default="all", description="Resource to get the market information for")
+                          resource: str = commands.parameter(
+                              default="all", description="Resource to get the market information for")
                           ) -> None:
         if resource.lower() == "all":
-            resources = {"food": None, "coal": None, "oil": None, "iron": None, "lead": None, "bauxite": None, "uranium": None, "steel": None, "aluminum": None, "gasoline": None, "munitions": None}
+            resources = {"food": None, "coal": None, "oil": None, "iron": None, "lead": None, "bauxite": None,
+                         "uranium": None, "steel": None, "aluminum": None, "gasoline": None, "munitions": None}
             for resource in resources:
                 resources[resource] = pnw.market_info(resource)
-            embed = discord.Embed(title="All Market Information", description="\n".join(f'{"**" + key.capitalize() + "**"}\nLowest Sell Offer: {value[1]: ,d}\nHighest Buy Offer: {value[0]: ,d}\n' for key, value in resources.items()), color=0xFF5733)
+            embed = discord.Embed(title="All Market Information", description="\n".join(
+                f'{"**" + key.capitalize() + "**"}\nLowest Sell Offer: {value[1]: ,d}\nHighest Buy Offer: {value[0]: ,d}\n' for key, value in resources.items()), color=0xFF5733)
         else:
             try:
                 high_buy, low_sell = pnw.market_info(resource)
             except InvalidResourceException as inst:
-                    embed = discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
-                    await attempt_send(ctx, embed)
-                    return
-            embed = discord.Embed(title=f'{resource.capitalize()} Market Information', description=f'Lowest Sell Offer: {low_sell: ,d}\nHighest Buy Offer: {high_buy: ,d}')
+                embed = discord.Embed(
+                    title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
+                await attempt_send(ctx, embed)
+                return
+            embed = discord.Embed(title=f'{resource.capitalize()} Market Information',
+                                  description=f'Lowest Sell Offer: {low_sell: ,d}\nHighest Buy Offer: {high_buy: ,d}')
         await attempt_send(ctx, embed)
-
 
     #################
     # USER COMMANDS #
     #################
 
-
     # WIP command to display user's Politics and War information
+
     @commands.command(name="mypnwinfo",
                       enabled=False)
     async def my_info(self,
                       ctx: commands.Context,
-                      nation_id: int = commands.parameter(description="ID of the nation whose information is to be displayed"),
-                      api_key: typing.Optional[str]=commands.parameter(default=None, description="User's API key, used to access their personal information for display")
+                      nation_id: int = commands.parameter(
+                          description="ID of the nation whose information is to be displayed"),
+                      api_key: typing.Optional[str] = commands.parameter(
+                          default=None, description="User's API key, used to access their personal information for display")
                       ) -> None:
         await ctx.message.delete()
         # If they specified an API key, then they want to display sensitive information
         if api_key is not None:
             result = pnw.get_query("my_info", nation_id, api_key)
             nation = result.nations[0]
-            embed = discord.Embed(title=f'Info for {nation.nation_name}',description=f'Military\nSoldiers: {nation.soldiers}\nTanks: {nation.tanks}\nAircraft: {nation.aircraft}\nShips: {nation.ships}', color=0xFF5733)
+            embed = discord.Embed(
+                title=f'Info for {nation.nation_name}', description=f'Military\nSoldiers: {nation.soldiers}\nTanks: {nation.tanks}\nAircraft: {nation.aircraft}\nShips: {nation.ships}', color=0xFF5733)
         # Otherwise, they only want to display non-sensitive information
         else:
             result = pnw.get_query("my_info", nation_id)
             nation = result.nations[0]
-            embed = discord.Embed(title=f'Info for {nation.nation_name}',description=f'Military\nSoldiers: {nation.soldiers}\nTanks: {nation.tanks}\nAircraft: {nation.aircraft}\nShips: {nation.ships}', color=0xFF5733)
+            embed = discord.Embed(
+                title=f'Info for {nation.nation_name}', description=f'Military\nSoldiers: {nation.soldiers}\nTanks: {nation.tanks}\nAircraft: {nation.aircraft}\nShips: {nation.ships}', color=0xFF5733)
         # Log the command usage
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !mypnwinfo command with id {nation_id}.\n')
         LOG.flush()
         await attempt_send(ctx, embed)
-    
+
     # Add cog check that simply calls the general_tasks utility function to check a few things
     async def cog_check(self,
                         ctx: commands.Context
                         ) -> bool:
         return await generic_tasks(LOG, ctx, allowed_guilds)
-
-
 
 
 ################
@@ -450,41 +490,47 @@ class Moderation(commands.Cog,
     @commands.has_permissions(ban_members=True)
     async def ban(self,
                   ctx: commands.Context,
-                  members: commands.Greedy[discord.Member] = commands.parameter(description="User(s) to ban"),
+                  members: commands.Greedy[discord.Member] = commands.parameter(
+                      description="User(s) to ban"),
                   *,
-                  reason: typing.Optional[str] = commands.parameter(default="No reason given", description="Reason for banning the user(s)")
+                  reason: typing.Optional[str] = commands.parameter(
+                      default="No reason given", description="Reason for banning the user(s)")
                   ) -> None:
         if members is None:
             await attempt_send(ctx, "You must specify which members to ban.")
             return
         for member in members:
-            await member.ban(reason = reason)
-        embed = discord.Embed(title="Wall of Bans", description=f'The following Discord users have joined the Wall of Bans of {ctx.guild.name} for the reason "{reason}":\n{"".join(f"{member.name} ({member.id})"for member in members)}\n', color=0xFF5733)
+            await member.ban(reason=reason)
+        embed = discord.Embed(
+            title="Wall of Bans", description=f'The following Discord users have joined the Wall of Bans of {ctx.guild.name} for the reason "{reason}":\n{"".join(f"{member.name} ({member.id})"for member in members)}\n', color=0xFF5733)
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !ban command to ban {", ".join(f"{member.name} ({member.id})" for member in members)} for the reason "{reason}".\n')
         LOG.flush()
         await attempt_send(ctx, embed)
-        
+
     @commands.command(name="kick",
                       help="Kick one or more user(s) with a specified reason",
                       brief="Kick people",
                       usage="!kick @Jacob @Wumpus Bad people")
     @commands.has_permissions(kick_members=True)
     async def kick(self,
-                  ctx: commands.Context,
-                  members: commands.Greedy[discord.Member] = commands.parameter(description="User(s) to kick"),
-                  *,
-                  reason: typing.Optional[str] = commands.parameter(default="No reason given", description="Reason for kicking the user(s)")
-                  ) -> None:
+                   ctx: commands.Context,
+                   members: commands.Greedy[discord.Member] = commands.parameter(
+                       description="User(s) to kick"),
+                   *,
+                   reason: typing.Optional[str] = commands.parameter(
+                       default="No reason given", description="Reason for kicking the user(s)")
+                   ) -> None:
         if members is None:
             await attempt_send(ctx, "You must specify which members to kick.")
             return
         for member in members:
-            await member.ban(reason = reason)
-        embed = discord.Embed(title="Wall of Kicks", description=f'The following Discord users have joined the Wall of Kicks of {ctx.guild.name} for the reason "{reason}":\n{"".join(f"{member.name} ({member.id})"for member in members)}\n', color=0xFF5733)
+            await member.ban(reason=reason)
+        embed = discord.Embed(
+            title="Wall of Kicks", description=f'The following Discord users have joined the Wall of Kicks of {ctx.guild.name} for the reason "{reason}":\n{"".join(f"{member.name} ({member.id})"for member in members)}\n', color=0xFF5733)
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) used the !kick command to kick {", ".join(f"{member.name} ({member.id})" for member in members)} for the reason "{reason}".\n')
         LOG.flush()
         await attempt_send(ctx, embed)
-    
+
     @commands.command(name="mute",
                       help="Mute one or more user(s)",
                       brief="Mute people",
@@ -492,11 +538,13 @@ class Moderation(commands.Cog,
     @commands.has_permissions(moderate_members=True, manage_roles=True)
     async def mute(self,
                    ctx: commands.Context,
-                   members: commands.Greedy[discord.Member] = commands.parameter(description="User(s) to mute"),
+                   members: commands.Greedy[discord.Member] = commands.parameter(
+                       description="User(s) to mute"),
                    ) -> None:
         role = discord.utils.get(ctx.guild.roles, name="Muted")
         if not role:
-            perms = discord.Permissions.none() or discord.Permissions(read_messages=True, read_message_history=True)
+            perms = discord.Permissions.none() or discord.Permissions(
+                read_messages=True, read_message_history=True)
             role = await ctx.guild.create_role(name="Muted", permissions=perms, colour=discord.Colour(0x0062ff))
         for member in members:
             if role in member.roles:
@@ -504,16 +552,17 @@ class Moderation(commands.Cog,
                 continue
             await member.add_roles(role)
             await attempt_send(ctx, f'Member {member.name} ({member.id}) has been muted.')
-    
+
     @commands.command(name="unmute",
                       help="Unmute one or more user(s)",
                       brief="Unmute people",
                       usage="!unmute @Jacob @Wumpus")
     @commands.has_permissions(moderate_members=True, manage_roles=True)
     async def unmute(self,
-                   ctx: commands.Context,
-                   members: commands.Greedy[discord.Member] = commands.parameter(description="User(s) to unmute"),
-                   ) -> None:
+                     ctx: commands.Context,
+                     members: commands.Greedy[discord.Member] = commands.parameter(
+                         description="User(s) to unmute"),
+                     ) -> None:
         role = discord.utils.get(ctx.guild.roles, name="Muted")
         if not role:
             await attempt_send(ctx, f'Cannot unmute a member when the Muted role does not exist yet.')
@@ -523,16 +572,13 @@ class Moderation(commands.Cog,
                 continue
             await member.remove_roles(role)
             await attempt_send(ctx, f'Member {member.name} ({member.id}) has been unmuted.')
-        
-    
+
     # Add cog check that simply calls the general_tasks utility function to check a few things
+
     async def cog_check(self,
                         ctx: commands.Context
                         ) -> bool:
         return await generic_tasks(LOG, ctx, allowed_guilds)
-
-
-
 
 
 ######################
@@ -552,14 +598,16 @@ class BotAdmin(commands.Cog,
                         ctx: commands.Context
                         ) -> None:
         # Clear the command log by opening and passing it
-        with open(ENV('LOG_DIRECTORY'),'w') as _:
+        with open(ENV('LOG_DIRECTORY'), 'w') as _:
             pass
         # Clear the error log in a similar way
-        with open(ENV('ERROR_LOG_DIRECTORY'),'w') as _:
+        with open(ENV('ERROR_LOG_DIRECTORY'), 'w') as _:
             pass
         # Send a message and log that the logs have been cleared
-        embed = discord.Embed(title="Log Clear", description=f'Admin {ctx.message.author} ({ctx.message.author.id}) has cleared the logs.', color=0xFF5733)
-        LOG.write(f'Admin {ctx.message.author} ({ctx.message.author.id}) has cleared the logs.')
+        embed = discord.Embed(
+            title="Log Clear", description=f'Admin {ctx.message.author} ({ctx.message.author.id}) has cleared the logs.', color=0xFF5733)
+        LOG.write(
+            f'Admin {ctx.message.author} ({ctx.message.author.id}) has cleared the logs.')
         LOG.flush()
         await attempt_send(ctx, embed)
 
@@ -572,9 +620,11 @@ class BotAdmin(commands.Cog,
                       ctx: commands.Context
                       ) -> None:
         # Create an embed saying that the bot was shut off by this specific admin
-        embed = discord.Embed(title="Bot Shutoff", description=f'Admin {ctx.message.author} ({ctx.message.author.id}) has shutoff the bot.', color=0xFF5733)
+        embed = discord.Embed(
+            title="Bot Shutoff", description=f'Admin {ctx.message.author} ({ctx.message.author.id}) has shutoff the bot.', color=0xFF5733)
         # Write to the log that the bot was shut off and send the embed
-        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) shut the bot off.\n')
+        LOG.write(
+            f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) shut the bot off.\n')
         LOG.flush()
         await attempt_send(ctx, embed)
         # Close the bot and exit the program
@@ -590,15 +640,17 @@ class BotAdmin(commands.Cog,
                       ctx: commands.Context
                       ) -> None:
         # Create an embed saying that the bot was restart by this specific admin
-        embed = discord.Embed(title="Bot Restart", description=f'Admin {ctx.message.author} ({ctx.message.author.id}) has restarted the bot.', color=0xFF5733)
+        embed = discord.Embed(
+            title="Bot Restart", description=f'Admin {ctx.message.author} ({ctx.message.author.id}) has restarted the bot.', color=0xFF5733)
         # Write to the log that the bot was restart
-        LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) restarted the bot.\n')
+        LOG.write(
+            f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) restarted the bot.\n')
         LOG.flush()
         # Send the embed
         await attempt_send(ctx, embed)
         # Re-execute this file to restart the bot
         os.execv(sys.executable, ['python'] + sys.argv)
-        
+
     # Add a command to add a server to the permitted list of servers
     @commands.command(name="addserver",
                       help="Add a server to the list of servers the bot can be used in",
@@ -606,7 +658,8 @@ class BotAdmin(commands.Cog,
                       usage="!addserver (guild_id)")
     async def add_server(self,
                          ctx: commands.Context,
-                         guild_id: typing.Optional[int] = commands.parameter(default=None, description="The ID of the guild to add")
+                         guild_id: typing.Optional[int] = commands.parameter(
+                             default=None, description="The ID of the guild to add")
                          ) -> None:
         global admins, allowed_guilds
         # If the user does not specify a guild_id, then they want to add the server they used the command in
@@ -615,7 +668,8 @@ class BotAdmin(commands.Cog,
         # Check if the guild is already a permitted guild
         if check_guild(ctx.guild, allowed_guilds):
             # Log and message telling that it is
-            embed = discord.Embed(title="Already Permitted", description=f'Server {guild_id} is already an allowed server for bot commands.', color=0xFF5733)
+            embed = discord.Embed(
+                title="Already Permitted", description=f'Server {guild_id} is already an allowed server for bot commands.', color=0xFF5733)
             LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to add server {guild_id}, but that server already has permission.\n')
             LOG.flush()
             await attempt_send(ctx, embed)
@@ -650,18 +704,21 @@ class BotAdmin(commands.Cog,
         # Re-assign the admins and allowed_guilds variables to account for the changes to the .env
         admins, allowed_guilds = start(dotenv_path)
         # Create an embed saying that the server was added successfully, log it, and send it
-        embed = discord.Embed(title="Server Added", description=f"Admin {ctx.message.author} ({ctx.message.author.id}) has added the guild {guild_id} to the bot's permitted guilds.", color=0xFF5733)
-        LOG.write(f"Admin {ctx.message.author} ({ctx.message.author.id}) has added the guild {guild_id} to the bot's permitted guilds.")
+        embed = discord.Embed(
+            title="Server Added", description=f"Admin {ctx.message.author} ({ctx.message.author.id}) has added the guild {guild_id} to the bot's permitted guilds.", color=0xFF5733)
+        LOG.write(
+            f"Admin {ctx.message.author} ({ctx.message.author.id}) has added the guild {guild_id} to the bot's permitted guilds.")
         LOG.flush()
         await attempt_send(ctx, embed)
-    
+
     # Add a command where I can try to keep track of how much time I spend working on the bot
     @commands.command(name="work",
                       help="Start or stop the clock of working on the bot.",
                       usage="!work [start/stop]")
     async def work(self,
                    ctx: commands.Context,
-                   clock: str = commands.parameter(description="Whether or not to start or stop working")
+                   clock: str = commands.parameter(
+                       description="Whether or not to start or stop working")
                    ) -> None:
         global start_time
         # Get me (the first admin)
@@ -695,7 +752,7 @@ class BotAdmin(commands.Cog,
                         pass
             # Message me letting me know I clocked out
             await attempt_send(me, f"You've 'clocked out' to working on the bot.")
-            
+
     # Add a cog check that checks if the user of these commands is an admin
     async def cog_check(self,
                         ctx: commands.Context
@@ -704,11 +761,13 @@ class BotAdmin(commands.Cog,
         if ctx.message.author.id in admins:
             return True
         # Otherwise, it messages and logs that a non-admin tried to use the command before returning false
-        embed = discord.Embed(title="Improper Access", description=f'User {ctx.message.author} ({ctx.message.author.id}) does not have permissions to run this command. Contact an Admin to resolve this issue.', color=0xFF5733)
+        embed = discord.Embed(
+            title="Improper Access", description=f'User {ctx.message.author} ({ctx.message.author.id}) does not have permissions to run this command. Contact an Admin to resolve this issue.', color=0xFF5733)
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use command {ctx.command}, but did not have proper access.\n')
         LOG.flush()
         await attempt_send(ctx, embed)
         return False
-    
+
+
 # Run the bot
 bot.run(TOKEN)

@@ -6,34 +6,42 @@ import math
 from discord.ext import commands
 
 # A utility function to check whether or not a guild is a currently permitted guild
+
+
 def check_guild(guild: discord.Guild, allowed_guilds: list[int]) -> bool:
     if guild.id in allowed_guilds:
         return True
     else:
         return False
 
+
 async def generic_tasks(LOG: TextIOWrapper, ctx: commands.Context, allowed_guilds: list[int]) -> bool:
-    if(not check_guild(ctx.guild, allowed_guilds)):
+    if (not check_guild(ctx.guild, allowed_guilds)):
         # Write to the log that they attempted to use the command in the guild
         LOG.write(f'{ctx.message.created_at.strftime("%Y-%m-%d %H:%M:%S")} {ctx.message.author} ({ctx.message.author.id}) attempted to use the !{ctx.command} command in guild {ctx.guild.id}.\n')
         LOG.flush()
         # Let the user know they don't have permission to us it
-        embed = discord.Embed(title="Current Server Not Permitted", description="You do not have permission to use commands in this server. Please contact an admin for support.", color=0xFF5733)
+        embed = discord.Embed(title="Current Server Not Permitted",
+                              description="You do not have permission to use commands in this server. Please contact an admin for support.", color=0xFF5733)
         await ctx.send(embed=embed)
         return False
     return True
+
 
 async def resource_tasks(nation_id: int, ctx: commands.Context) -> tuple[pnwkit.Result, bool]:
     # Get the resource query result
     try:
         result = pnw.get_query("resource", nation_id)
     except Exception as inst:
-        embed = discord.Embed(title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
+        embed = discord.Embed(
+            title=f"{inst.name}", description=f'{inst.message}', color=0xFF5733)
         await ctx.send(embed=embed)
         return None, True
     return result, False
 
 # A utility function to initialize (or re-define) certain variables
+
+
 def start(dotenv_path: str) -> tuple[list[int], list[int]]:
     # Initialize the variables to None in case they don't exist in the env file
     admins: list[int] = []
@@ -46,7 +54,7 @@ def start(dotenv_path: str) -> tuple[list[int], list[int]]:
             for line in f.readlines():
                 key, value = line.strip().split("=")
                 # If the key is ADMIN_IDS, then parse it
-                if(key == "ADMIN_IDS" and value != ''):
+                if (key == "ADMIN_IDS" and value != ''):
                     try:
                         admins = [int(id) for id in value.split(",")]
                     except ValueError as inst:
@@ -54,7 +62,7 @@ def start(dotenv_path: str) -> tuple[list[int], list[int]]:
                         errors.append(inst)
                         pass
                 # If the key is ALLOWED_GUILDS, then parse it
-                if(key == "ALLOWED_GUILDS" and value != ''):
+                if (key == "ALLOWED_GUILDS" and value != ''):
                     try:
                         allowed_guilds = [int(id) for id in value.split(",")]
                     except ValueError as inst:
@@ -63,10 +71,12 @@ def start(dotenv_path: str) -> tuple[list[int], list[int]]:
                         pass
     except Exception as inst:
         errors.append(inst)
-        
+
     return admins, allowed_guilds, errors
 
 # Inspired by code from https://www.reddit.com/r/learnpython/comments/92ne2s/why_does_round05_0/
+
+
 def my_round(num: float, places: int = 2) -> float:
     temp: float = num * (10 ** places)
     frac: float = temp - math.floor(temp)
@@ -74,11 +84,12 @@ def my_round(num: float, places: int = 2) -> float:
         return math.floor(temp) / (10 ** places)
     return math.ceil(temp) / (10 ** places)
 
+
 async def attempt_send(destination: discord.User | commands.Context, message: str | discord.Embed):
     try:
         if type(message) is str:
             await destination.send(message)
         else:
-            await destination.send(embed = message)
+            await destination.send(embed=message)
     except Exception as inst:
         raise inst
